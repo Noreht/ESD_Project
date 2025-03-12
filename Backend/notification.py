@@ -1,3 +1,5 @@
+# Code in charge of notifications.
+
 import pika, sys, os
 
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
