@@ -1,4 +1,5 @@
 ### *** Acknowledged with the use of Copilot in creating this code. *** ###
+# Code in charge of binding notifications for the Notifications Service.
 
 import pika
 
