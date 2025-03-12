@@ -12,7 +12,8 @@ account_SID, account_token = "YOUR_ACCOUNT_SID", "YOUR_ACCOUNT_TOKEN"
 twilio_phone_no = "YOUR_TWILIO_PHONE_NO"
 
 # My phone number where you intend to receive the SMS
-my_phone_no = "+6588164892"
+# "YOUR_PHONE_NO" is a placeholder.
+my_phone_no = "YOUR_PHONE_NO"
 
 # Create a Twilio client
 client = Client(account_SID, account_token)
