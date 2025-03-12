@@ -1,5 +1,7 @@
 import pika
 
+# Code that gets the user notified that there is a notification.
+
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
 
