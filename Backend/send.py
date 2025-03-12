@@ -1,0 +1,13 @@
+import pika
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+
+channel.queue_declare(queue='notification')
+
+channel.basic_publish(exchange='',
+                      routing_key='notification',
+                      body='Notification')
+print(" User sent a notification.")
+
+connection.close()
