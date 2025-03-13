@@ -1,3 +1,4 @@
+# Acknowleged use with Copilot on 12 March 2025 in helping me with notification.py
 # Code in charge of notifications.
 
 import pika, json, smtplib
