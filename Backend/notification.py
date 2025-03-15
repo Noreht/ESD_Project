@@ -22,6 +22,16 @@ smtp_port = 587
 EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
+def callback(ch, method, properties, body):
+    message = json.loads(body)
+    print(f"User Received Notification: {body}")
+
+    if 'to' in message and 'body' in message:
+        send_sms(message['to'], message['body'])
+    
+    if 'email' in message and 'body' in message:
+        send_email(message['email'], message['body'])
+
 def send_sms(to, body):
     client = Client(ACCOUNT_SID, AUTH_TOKEN)
     message = client.messages.create(
@@ -49,15 +59,7 @@ def send_email(to, body):
     except Exception as e:
         print(f"Failed to send email to {to}: {str(e)}")
 
-def callback(ch, method, properties, body):
-    message = json.loads(body)
-    print(f"User Received Notification: {body}")
 
-    if 'to' in message and 'body' in message:
-        send_sms(message['to'], message['body'])
-    
-    if 'email' in message and 'body' in message:
-        send_email(message['email'], message['body'])
 
 connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 channel = connection.channel()
