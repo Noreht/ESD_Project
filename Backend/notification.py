@@ -1,34 +1,39 @@
-# Acknowleged use with Copilot on 12 March 2025 in helping me with notification.py
-# Code in charge of notifications.
+# Acknowledged with the use of Copilot on 15 March for the group project.
+# Copilot was used in helping me to get the correct code to use
+# environment variables.
 
-import pika, json, smtplib
+import json, pika, os, smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from twilio.rest import Client
+from dotenv import load_dotenv
 
-# Twilio configuration
-account_sid = 'YOUR_ACCOUNT_SID'
-auth_token = 'YOUR_AUTH_TOKEN'
-twilio_phone_number = 'YOUR_TWILIO_PHONE_NO'
+# Load environment variables from sensitive_info.env file
+load_dotenv('sensitive_info.env')
 
-# Email configuration
+# Configure Twilio
+ACCOUNT_SID = os.getenv('ACCOUNT_SID')
+AUTH_TOKEN = os.getenv('AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
+
+# Configure Email
 smtp_server = 'smtp.gmail.com'
 smtp_port = 587
-email_user = 'YOUR_EMAIL_ADDRESS'
-email_password = 'YOUR_EMAIL_PASSWORD'
+EMAIL_USER = os.getenv('EMAIL_USER')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
 def send_sms(to, body):
-    client = Client(account_sid, auth_token)
+    client = Client(ACCOUNT_SID, AUTH_TOKEN)
     message = client.messages.create(
         body=body,
-        from_=twilio_phone_number,
+        from_=TWILIO_PHONE_NUMBER,
         to=to
     )
     print(f"SMS sent to {to}: {body}")
 
 def send_email(to, body):
     msg = MIMEMultipart()
-    msg['From'] = email_user
+    msg['From'] = EMAIL_USER
     msg['To'] = to
     msg['Subject'] = 'Notification'
     msg.attach(MIMEText(body, 'plain'))
@@ -36,9 +41,9 @@ def send_email(to, body):
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
-        server.login(email_user, email_password)
+        server.login(EMAIL_USER, EMAIL_PASSWORD)
         text = msg.as_string()
-        server.sendmail(email_user, to, text)
+        server.sendmail(EMAIL_USER, to, text)
         server.quit()
         print(f"Email sent to {to}: {body}")
     except Exception as e:
