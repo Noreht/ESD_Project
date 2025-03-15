@@ -35,7 +35,7 @@ def send_email(to, body):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USER
     msg['To'] = to
-    msg['Subject'] = 'Notification'
+    msg['Subject'] = 'You have received a notification.'
     msg.attach(MIMEText(body, 'plain'))
 
     try:
