@@ -22,6 +22,16 @@ smtp_port = 587
 EMAIL_USER = os.getenv('EMAIL_USER')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
+def send_sms(to, body):
+    client = Client(ACCOUNT_SID, AUTH_TOKEN)
+    message = client.messages.create(
+        body=body,
+        from_=TWILIO_PHONE_NUMBER,
+        to=to
+    )
+    print(f"SMS sent to {to}: {body}")
+
+
 def callback(ch, method, properties, body):
     message = json.loads(body)
     print(f"User Received Notification: {body}")
@@ -32,14 +42,7 @@ def callback(ch, method, properties, body):
     if 'email' in message and 'body' in message:
         send_email(message['email'], message['body'])
 
-def send_sms(to, body):
-    client = Client(ACCOUNT_SID, AUTH_TOKEN)
-    message = client.messages.create(
-        body=body,
-        from_=TWILIO_PHONE_NUMBER,
-        to=to
-    )
-    print(f"SMS sent to {to}: {body}")
+
 
 def send_email(to, body):
     msg = MIMEMultipart()
