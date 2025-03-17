@@ -116,11 +116,31 @@
             <div v-if="currentTab.name === 'Overview'">
               <p>This is the overview of your OCR video analysis service. Here you can see summaries and performance metrics.</p>
             </div>
-            <div v-else-if="currentTab.name === 'Submit Link'">
-              <p>Submit a video link to have it analyzed. Enter the video URL and submit to start the OCR process.</p>
+            <div v-else-if="currentTab.name === 'Save Video'">
+              <p>Choose a video to save</p>
+
+              <!--- SAVE VIDEO HERE-->
+              <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
+                <div v-for="video in videos" :key="video.id" class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
+                  <img :src="video.imageSrc" :alt="video.imageAlt" class="aspect-[3/4] w-full bg-gray-200 object-cover group-hover:opacity-75 sm:aspect-auto sm:h-96" />
+                  <div class="flex flex-1 flex-col space-y-2 p-4">
+                    <h3 class="text-sm font-medium text-gray-900">
+                      <a :href="video.href">
+                        <span aria-hidden="true" class="absolute inset-0" />
+                        {{ video.name }}
+                      </a>
+                    </h3>
+                    <p class="text-sm text-gray-500">{{ video.description }}</p>
+                    <div class="flex flex-1 flex-col justify-end">
+                      <p class="text-sm italic text-gray-500">{{ video.date_published }}</p>
+                      <p class="text-base font-medium text-gray-900">SAVE</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <form class="mt-6 sm:flex sm:max-w-md">
                     <label for="video-url" class="sr-only">Video URL</label>
-                    <input type="link" name="video-url" id="video-url"  required="" class="w-full min-w-0 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:w-64 sm:text-sm/6 xl:w-full" placeholder="Enter the link" />
+                    <input type="link" name="video-url" id="video-url"  required="" class="w-full min-w-0 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:w-64 sm:text-sm/6 xl:w-full" placeholder="Add new video" />
                     <div class="mt-4 sm:ml-4 sm:mt-0 sm:shrink-0">
                     <button type="submit" class="flex w-full items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Submit</button>
                     </div>
@@ -154,7 +174,7 @@
   // Updated navigation items
   const navigation = [
     { name: 'Overview', href: '#', current: true },
-    { name: 'Submit Link', href: '#', current: false },
+    { name: 'Save Video', href: '#', current: false },
     { name: 'Categories', href: '#', current: false },
     { name: 'Recommendations', href: '#', current: false },
   ]
@@ -172,5 +192,19 @@
     currentTab.value = item
     navigation.forEach(n => (n.current = n.name === item.name))
   }
+
+  const videos = [
+  {
+    id: 1,
+    title: 'Victoria Secret Runway Collection',
+    href: '#',
+    date_published: '17 Mar 2025',
+    description: 'Catch the latest show.',
+    imageSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
+    imageAlt: 'Catch the latest show.',
+  },
+ 
+  // More videos...
+]
   </script>
   
