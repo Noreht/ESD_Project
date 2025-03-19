@@ -122,7 +122,7 @@
               <!--- SAVE VIDEO HERE-->
               <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
                 <div v-for="video in videos" :key="video.id" class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  <img :src="video.imageSrc" :alt="video.imageAlt" class="aspect-[3/4] w-full bg-gray-200 object-cover group-hover:opacity-75 sm:aspect-auto sm:h-96" />
+                  <img :src="video.videoSrc" :alt="video.videoAlt" class="aspect-[3/4] w-full bg-gray-200 object-cover group-hover:opacity-75 sm:aspect-auto sm:h-96" />
                   <div class="flex flex-1 flex-col space-y-2 p-4">
                     <h3 class="text-sm font-medium text-gray-900">
                       <a :href="video.href">
@@ -200,8 +200,8 @@
     href: '#',
     date_published: '17 Mar 2025',
     description: 'Catch the latest show.',
-    imageSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
-    imageAlt: 'Catch the latest show.',
+    videoSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
+    videoAlt: 'Catch the latest show.',
   },
  
   // More videos...
