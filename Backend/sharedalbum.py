@@ -1,7 +1,7 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import requests
 from dotenv import load_dotenv
-import os
+import os, pika, json
 
 # Define shared_album dictionary
 categories = {
@@ -63,11 +63,71 @@ def get_data():
         )
 
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5001)
-
-
-# TODO2: Exposes POST endpoint URL (Adds video_id ) x Supabase 
+# TODO2: Exposes POST endpoint URL (Adds video_id ) x Supabase
 
 
 # TODO3: Publish message to RabbitMQ (Publish-Subscribe)
+RABBITMQ_HOST = "localhost"  #! TF
+FANOUT_EXCHANGE = "shared_album_fanout"
+
+
+def publish_to_rabbitmq(vidid, subscriber_list, shared_album_name):
+    """Publish message to RabbitMQ fanout exchange."""
+    try:
+        # Establish connection
+        connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
+        channel = connection.channel()
+
+        # Declare fanout exchange (durable to survive broker restarts)
+        channel.exchange_declare(
+            exchange=FANOUT_EXCHANGE, exchange_type="fanout", durable=True
+        )
+
+        # Prepare message
+        message = {
+            "vid_id": vidid,
+            "subscriber_list": subscriber_list,
+            "shared_album_name": shared_album_name,
+        }
+
+        # Publish message
+        channel.basic_publish(
+            exchange=FANOUT_EXCHANGE,
+            routing_key="",  # Fanout ignores routing key
+            body=json.dumps(message),
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # Persistent message
+            ),
+        )
+        connection.close()
+        return True
+    except Exception as e:
+        print(f"Error publishing message: {e}")
+        return False
+
+
+# New POST endpoint to add video and publish message to RabbitMQ Broker
+#! Receive album details from frontend
+@app.route("/add_video", methods=["POST"])
+def add_video():
+    data = request.get_json()
+    vidid = data.get("vidid")
+
+    #! Get shared_album_id from Frontend (Reads from Shared Album DB -> Needs album's subscriber_list and shared_album name)
+    subscriber_list = data.get("subscriber_list")
+    shared_album_name = data.get("shared_album_name")
+
+    # Publish message to RabbitMQ
+    if publish_to_rabbitmq(vidid, subscriber_list, shared_album_name):
+        return (
+            jsonify(
+                {"status": "success", "message": "Video added and message published"}
+            ),
+            201,
+        )
+    else:
+        return jsonify({"status": "error", "message": "Failed to publish message"}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5001)
