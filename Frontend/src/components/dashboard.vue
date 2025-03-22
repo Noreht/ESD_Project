@@ -153,6 +153,10 @@
               <p>View recommendations based on your video analysis. Get insights and tips to improve your video content.</p>
               
             </div>
+            <div v-else-if="currentTab.name === 'Shared Albums'">
+              <p>Share videos with your friends!</p>
+              
+            </div>
           </div>
         </main>
       </div>
@@ -177,6 +181,7 @@
     { name: 'Save Video', href: '#', current: false },
     { name: 'Categories', href: '#', current: false },
     { name: 'Recommendations', href: '#', current: false },
+    { name: 'Shared Albums', href: '#', current: false },
   ]
   
   const userNavigation = [
