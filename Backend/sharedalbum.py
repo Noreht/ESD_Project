@@ -152,6 +152,11 @@ def add_video_to_shared_album():
     )
 
 
+
+# TODO3: Send AQMP to Event Broker (Scenario 2)
+
+
+
 # Run the gawddamn app
 if __name__ == "__main__":
     # Start consumer in a background thread
