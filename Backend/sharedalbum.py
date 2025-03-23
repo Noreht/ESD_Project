@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 import requests
 from dotenv import load_dotenv
-import os, pika, json
+import os, pika, json, threading
 
 # Define shared_album dictionary
 categories = {
@@ -18,116 +18,147 @@ categories = {
 }
 
 
-# TODO1 : Connect to Supabase (Shared Album DB) - Add video_id and Read
-
 app = Flask(__name__)
 
-load_dotenv()  # Load environment variables from .env file
+# TODO1: Steps 8 and 9 (Listens for Fire n Forget from Categories, Reads from Supabase & Sends AMQP to Notifications)
+import pika
+import requests
+import json
 
+# Supabase Configuration
+load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_KEY")
+TABLE_NAME = "sharedalbum"
+
+# RabbitMQ Configuration
+RABBITMQ_HOST = "localhost"
+CATEGORIES_TO_SHAREDALBUM_QUEUE = "categories_to_sharedalbum_queue"
+NOTIFICATIONS_QUEUE = "notifications_queue"
 
 
-# TODO2: Return Text Array (Subcategories) to UI ('Korea Trip' shared album displays 'Food', 'Shopping'....)
-# use 'http://127.0.0.1:5001/get_data' (Returns Subcategory List to UI)
-@app.route("/get_data", methods=["GET"])
-def get_data():
-    # Use the correct table endpoint
-    TABLE_NAME = "sharedalbum"  # Replace with your actual table name
-    endpoint = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"  # entire table
+def process_message(channel, method, properties, body):
+    print(f"Received message from Categories (Step 8): {body}\n")
 
-    headers = {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
-    }
+    try:
+        # Parse incoming message from Categories (Fire and Forget)
 
-    album_id = "1"  #! Theron UI press Album_ID
+        message = json.loads(body)
+        album_id = (
+            "korea trip"  #! Hardcoded to be 'korea trip', else: message.get("album_id")
+        )
+        subcategory_list_album = message.get(
+            "subcategory_list_album"
+        )  #! Name may differ
+        new_vid_id = message.get("new_vid_id")  #! New Video added
 
-    response = requests.get(
-        endpoint,
-        headers=headers,
-        params={
-            "select": "subcategory_list",
-            "album_id": f"eq.{album_id}",  # Filter by album_id
-        },
-    )
+        if not album_id or not new_vid_id:
+            print("Invalid message: Missing album_id or new_vid_id")
+            return
 
-    if response.status_code == 200:
-        return jsonify(response.json()), 200
-
-    else:
-        return (
-            jsonify({"error": "Failed to fetch data from Supabase"}),
-            response.status_code,
+        # Fetch album details from Supabase ({album_id, album_name, subscriber_list})
+        endpoint = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
+        headers = {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+        }
+        response = requests.get(
+            endpoint, headers=headers, params={"album_id": f"eq.{album_id}"}
         )
 
+        if response.status_code != 200:
+            print(f"Failed to fetch album {album_id} from Supabase")
+            return
 
-# TODO2: Exposes POST endpoint URL (Adds video_id ) x Supabase
+        album_data = response.json()
+
+        if not album_data:
+            print(f"Album {album_id} not found in Supabase")
+            return
+
+        album = album_data[0]  #! Returns 1st column
+
+        subscriber_list_bad = album.get("subscriber_list")[0]
+        new_subscriber_list = subscriber_list_bad.split(",")
+
+        # Construct message for Notifications
+        notification_message = {
+            "vid_id": new_vid_id,
+            "shared_album_name": album.get(
+                "album_name"
+            ),  # from Supabase -> 'korea trip' duh
+            "subcategory_list_of_album": subcategory_list_album,  #! From Categories (May need handling to put in a Python List) [from Outsystems DB]
+            "subscriber_list": new_subscriber_list,  # Text Arr (Supabase dtype -> Python List)
+        }
+
+        print(notification_message["subscriber_list"])
+        # Send to Notifications queue
+        channel.basic_publish(
+            exchange="",
+            routing_key=NOTIFICATIONS_QUEUE,
+            body=json.dumps(notification_message),
+            properties=pika.BasicProperties(delivery_mode=2),  # Persistent
+        )
+
+        print("Message sent to Notifications [Completed]\n")
+        print(f"Message Content:{notification_message}\n")
+
+    except Exception as e:
+        print(f"Error processing message: {str(e)}")
+
+
+def start_consumer():
+    # Connect to RabbitMQ
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+    channel = connection.channel()
+
+    # Declare queues
+    channel.queue_declare(queue=CATEGORIES_TO_SHAREDALBUM_QUEUE, durable=True)
+    channel.queue_declare(queue=NOTIFICATIONS_QUEUE, durable=True)
+
+    # Start consuming
+    channel.basic_consume(
+        queue=CATEGORIES_TO_SHAREDALBUM_QUEUE,
+        on_message_callback=process_message,
+        auto_ack=True,
+    )
+    print("Waiting for messages from Categories...")
+    channel.start_consuming()
+
+
+# TODO2: Returns msg to UI "Wait User!" upon a POST request to Shared Album microservice
+@app.route("/shared-album/add", methods=["POST"])
+def add_video_to_shared_album():
+    data = request.get_json()  # Get the JSON from the UI
+    if not data:
+        return jsonify({"error": "No JSON received"}), 400
+
+    # Extract expected fields from JSON
+    video_id = data.get("video_id")
+    album_id = data.get("album_id")  #! Prolly hard-coded to 'korea trip'
+    input_person_email = data.get(
+        "input_person_email"
+    )  #! Prolly need input field / hardcoded on UI layer
+
+    # Respond to UI.
+    return (
+        jsonify(
+            {
+                "message": f"Ok, my love 💋! Please patiently wait for autocategorisation within {album_id}"
+            }
+        ),
+        200,
+    )
+
+
+# Run the gawddamn app
+if __name__ == "__main__":
+    # Start consumer in a background thread
+    consumer_thread = threading.Thread(target=start_consumer, daemon=True)
+    consumer_thread.start()
+
+    app.run(debug=True)
 
 
 # TODO3: Publish message to RabbitMQ (Publish-Subscribe)
-RABBITMQ_HOST = "localhost"  #! TF
-FANOUT_EXCHANGE = "shared_album_fanout"
-
-
-def publish_to_rabbitmq(vidid, subscriber_list, shared_album_name):
-    """Publish message to RabbitMQ fanout exchange."""
-    try:
-        # Establish connection
-        connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
-        channel = connection.channel()
-
-        # Declare fanout exchange (durable to survive broker restarts)
-        channel.exchange_declare(
-            exchange=FANOUT_EXCHANGE, exchange_type="fanout", durable=True
-        )
-
-        # Prepare message
-        message = {
-            "vid_id": vidid,
-            "subscriber_list": subscriber_list,
-            "shared_album_name": shared_album_name,
-        }
-
-        # Publish message
-        channel.basic_publish(
-            exchange=FANOUT_EXCHANGE,
-            routing_key="",  # Fanout ignores routing key
-            body=json.dumps(message),
-            properties=pika.BasicProperties(
-                delivery_mode=2,  # Persistent message
-            ),
-        )
-        connection.close()
-        return True
-    except Exception as e:
-        print(f"Error publishing message: {e}")
-        return False
-
-
-# New POST endpoint to add video and publish message to RabbitMQ Broker
-#! Receive album details from frontend
-@app.route("/add_video", methods=["POST"])
-def add_video():
-    data = request.get_json()
-    vidid = data.get("vidid")
-
-    #! Get shared_album_id from Frontend (Reads from Shared Album DB -> Needs album's subscriber_list and shared_album name)
-    subscriber_list = data.get("subscriber_list")
-    shared_album_name = data.get("shared_album_name")
-
-    # Publish message to RabbitMQ
-    if publish_to_rabbitmq(vidid, subscriber_list, shared_album_name):
-        return (
-            jsonify(
-                {"status": "success", "message": "Video added and message published"}
-            ),
-            201,
-        )
-    else:
-        return jsonify({"status": "error", "message": "Failed to publish message"}), 500
-
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5001)
