@@ -41,6 +41,7 @@ NOTIFICATIONS_QUEUE = "notifications_queue"
 def process_message(channel, method, properties, body):
     print(f"Received message from Categories (Step 8): {body}\n")
 
+
     try:
         # Parse incoming message from Categories (Fire and Forget)
 
