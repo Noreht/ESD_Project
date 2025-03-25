@@ -123,14 +123,15 @@
               <!--- SAVE VIDEO HERE-->
               <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
                 <div v-for="video in videos" :key="video.id" class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  <video controls width="380" height="440">
-                    <source :src="`../assets/videos/${video.id}`" type="video/mp4" :poster="video.poster">
+                  <video controls class="w-full h-auto" :src="video.videoSrc" playsinline
+                  webkit-playsinline  preload controlsList="nofullscreen">
+                    <source type="video/mp4" :poster="video.poster" >
                     Your browser does not support the video tag.
                   </video>
                   <div class="flex flex-1 flex-col space-y-2 p-4">
                     <h3 class="text-sm font-medium text-gray-900">
-                      <a ><!--:href="video.href"-->
-                        <span aria-hidden="true" class="absolute inset-0" />
+                      <a :href="video.videoSrc"><!--:href="video.href"-->
+                        <span aria-hidden="true" class="absolute inset-0"/>
                         {{ video.title }}
                       </a>
                     </h3>
@@ -160,93 +161,96 @@
     </div>
   </template>
   
-  <script setup>
-  import { ref, onMounted } from 'vue'
-  import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
-  import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
-  import metadata from '../assets/videoMetadata.json';
-  
-  const user = {
-    name: 'Tom Cook',
-    email: 'tom@example.com',
-    imageUrl:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  }
-  
-  // Updated navigation items
-  const navigation = [
-    { name: 'Overview', href: '#', current: true },
-    { name: 'Save Video', href: '#', current: false },
-    { name: 'Categories', href: '#', current: false },
-    { name: 'Recommendations', href: '#', current: false },
-    { name: 'Shared Albums', href: '#', current: false },
-  ]
-  
-  const userNavigation = [
-    { name: 'Your Profile', href: '#' },
-    { name: 'Settings', href: '#' },
-    { name: 'Sign out', href: '#' },
-  ]
-  
-  // Set the default active tab to "Overview"
-  const currentTab = ref(navigation[0])
-  
-  function setTab(item) {
-    currentTab.value = item
-    navigation.forEach(n => (n.current = n.name === item.name))
-  }
+<script setup>
+import { ref, onMounted,reactive } from 'vue'
+import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
+import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import metadata from '../assets/videoMetadata.json';
 
-  const videoModules = import.meta.glob('../assets/videos/*.mp4')
-  const videos = ref([])
 
-  onMounted(() => {
-  // Extract the file names from the keys of videoModules.
-  const videoList = Object.keys(videoModules).map(path => {
-    // Extract the file name by splitting the path and taking the last segment.
-    const fileName = path.split('/').pop()
-      return {
-        id: fileName,
-        title: metadata[fileName]?.title || fileName,
-        videoAlt: metadata[fileName]?.author || 'Unknown',
-        description: metadata[fileName]?.description || '',
-        date_published: '17 Mar 2025',
-        href: "#",
-        poster: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
-      };
-      })
-    videos.value = videoList
-    console.log(videos)
-    })
-    
+const user = {
+  name: 'Poskitt',
+  email: 'tom@example.com',
+  imageUrl:
+    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+}
 
 
 
-  
-  
-  const apaini = Object.keys(videoModules).map(path => {
-    const fileName = path.replace('../assets/videos/', '');
-    return {
+const navigation = reactive([
+{ name: 'Overview', href: '#', current: true },
+{ name: 'Save Video', href: '#', current: false },
+{ name: 'Categories', href: '#', current: false },
+{ name: 'Recommendations', href: '#', current: false },
+{ name: 'Shared Albums', href: '#', current: false },
+])
+
+const userNavigation = [
+  { name: 'Your Profile', href: '#' },
+  { name: 'Settings', href: '#' },
+  { name: 'Sign out', href: '#' },
+]
+
+// Set the default active tab to "Overview"
+const currentTab = ref(navigation[0])
+
+function setTab(item) {
+  currentTab.value = item
+  navigation.forEach(n => (n.current = n.name === item.name))
+}
+
+const videoModules = import.meta.glob('../assets/videos/*.mp4')
+
+const videos = ref([])
+
+onMounted(async () => {
+  const videoList = [];
+  for (const path in videoModules) {
+    const module = await videoModules[path]();
+    const fileName = path.split('/').pop();
+    videoList.push({
       id: fileName,
       title: metadata[fileName]?.title || fileName,
       videoAlt: metadata[fileName]?.author || 'Unknown',
       description: metadata[fileName]?.description || '',
       date_published: '17 Mar 2025',
       href: "#",
-      videoSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
-    };
-  });
-  const potatoes = [
-  {
-    id: 1,
-    title: 'Victoria Secret Runway Collection',
-    href: '#',
-    date_published: '17 Mar 2025',
-    description: 'Catch the latest show.',
-    videoSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
-    videoAlt: 'Catch the latest show.',
-  },
- 
-  // More videos...
-]
-  </script>
+      videoSrc: module.default, // Use the processed URL from Vite
+      poster: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
+    });
+  }
+  videos.value = videoList
+  console.log(videos.value)
+})
   
+
+
+
+
+
+const apaini = Object.keys(videoModules).map(path => {
+  const fileName = path.replace('../assets/videos/', '');
+  return {
+    id: fileName,
+    title: metadata[fileName]?.title || fileName,
+    videoAlt: metadata[fileName]?.author || 'Unknown',
+    description: metadata[fileName]?.description || '',
+    date_published: '17 Mar 2025',
+    href: "#",
+    videoSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
+  };
+});
+const potatoes = [
+{
+  id: 1,
+  title: 'Victoria Secret Runway Collection',
+  href: '#',
+  date_published: '17 Mar 2025',
+  description: 'Catch the latest show.',
+  videoSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
+  videoAlt: 'Catch the latest show.',
+},
+
+// More videos...
+]
+</script>
