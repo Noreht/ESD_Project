@@ -2,11 +2,13 @@
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
 import dashboard from './components/dashboard.vue'
+
 </script>
 
 <template>
 
     <dashboard />
+    <router-view></router-view>
 
 </template>
 
