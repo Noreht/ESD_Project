@@ -3,9 +3,19 @@ from flask import Flask, request, jsonify
 import pika
 import json
 import sqlite3  # Change to actual DB in production
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE"],
+            "allow_headers": "Content-Type,Authorization",
+        }
+    },
+)
 # AMQP Connection setup
 def publish_to_queue(video_id):
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
@@ -25,6 +35,7 @@ def check_categories(video_id):
     return result > 0
 
 @app.route('/post_video', methods=['POST'])
+@cross_origin() 
 def receive_video():
     data = request.get_json()
     video_id = data.get("video_id")
@@ -37,5 +48,5 @@ def receive_video():
     
     return jsonify({"message": "Processing started"})
 
-if name == '__main__':
+if __name__ == '__main__':
     app.run(debug=True)
