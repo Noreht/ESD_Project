@@ -1,5 +1,0 @@
-print("hi")
-print("trial")
-print("This is how to use a pull request")
-print("1. make sure you are on a working branch")
-print("WHY CANT U WORK")
