@@ -38,6 +38,8 @@
 import { ref } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+
 
 export default {
   name: "Login",
@@ -49,17 +51,20 @@ export default {
     const store = useStore()
     const router = useRouter()
 
-    const Login = async () => {
-      try {
-        await store.dispatch('logIn', {
-          email: email.value,
-          password: password.value
+    const auth = getAuth() 
+
+    const Login = () => {
+      signInWithEmailAndPassword(auth, email.value, password.value)
+        .then((userCredential) => {
+          console.log('Successfully logged in!');
+          localStorage.setItem('authToken', userCredential.user.uid);
+
+          router.push('/');
         })
-        router.push('/')
-      }
-      catch (err) {
-        error.value = err.message
-      }
+        .catch(error => {
+          console.log(error.code);
+          alert(error.message);
+        });
     }
     return { Login, email, password, error }
   }

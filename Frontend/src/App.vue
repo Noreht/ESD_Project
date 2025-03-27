@@ -7,8 +7,8 @@ import dashboard from './components/dashboard.vue'
 
 <template>
 
-    <dashboard />
-    <router-view></router-view>
+    <!--<dashboard />-->
+    <router-view />
 
 </template>
 
