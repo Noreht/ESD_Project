@@ -5,6 +5,7 @@ import json
 import sqlite3  # Change to actual DB in production
 from flask_cors import CORS, cross_origin
 
+url = "localhost"
 app = Flask(__name__)
 CORS(
     app,
@@ -18,7 +19,7 @@ CORS(
 )
 # AMQP Connection setup
 def publish_to_queue(video_id):
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(url))
     channel = connection.channel()
     channel.queue_declare(queue='video_processing')
     message = json.dumps({"video_id": video_id})
