@@ -127,19 +127,20 @@
                   webkit-playsinline  preload controlsList="nofullscreen">
                     <source type="video/mp4" :poster="video.poster" >
                     Your browser does not support the video tag.
+                    
                   </video>
+                  
                   <div class="flex flex-1 flex-col space-y-2 p-4">
                     <h3 class="text-sm font-medium text-gray-900">
-                      <a :href="video.videoSrc"><!--:href="video.href"-->
-                        <span aria-hidden="true" class="absolute inset-0"/>
-                        {{ video.title }}
-                      </a>
+                      <a  :href="video.videoSrc"> 
+                        {{ video.title }}</a>                                 
                     </h3>
                     <p class="text-sm text-gray-500">{{ video.description }}</p>
                     <div class="flex flex-1 flex-col justify-end">
                       <p class="text-sm italic text-gray-500">{{ video.date_published }}</p>
-                      <button type="submit" class="flex w-1/2 items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
-                    </div>
+                      <button type="button" @click.stop="saveVideo(video.id)" class="flex w-1/2 items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
+                  </div>
+                    
                   </div>
                 </div>
               </div>
@@ -166,6 +167,7 @@ import { ref, onMounted,reactive } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import metadata from '../assets/videoMetadata.json';
+import axios from 'axios';
 
 
 const user = {
@@ -224,33 +226,16 @@ onMounted(async () => {
 })
   
 
-
-
-
-
-const apaini = Object.keys(videoModules).map(path => {
-  const fileName = path.replace('../assets/videos/', '');
-  return {
-    id: fileName,
-    title: metadata[fileName]?.title || fileName,
-    videoAlt: metadata[fileName]?.author || 'Unknown',
-    description: metadata[fileName]?.description || '',
-    date_published: '17 Mar 2025',
-    href: "#",
-    videoSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
-  };
-});
-const potatoes = [
-{
-  id: 1,
-  title: 'Victoria Secret Runway Collection',
-  href: '#',
-  date_published: '17 Mar 2025',
-  description: 'Catch the latest show.',
-  videoSrc: 'https://tailwindcss.com/plus-assets/img/ecommerce-images/category-page-02-image-card-01.jpg',
-  videoAlt: 'Catch the latest show.',
-},
-
-// More videos...
-]
+function saveVideo(videoId) {
+  console.log("saveVideo pressed for:", videoId)
+  axios.post('http://localhost:5000/post_video', {
+    video_id: videoId
+  })
+  .then(response => {
+    console.log("Response from backend:", response.data)
+  })
+  .catch(error => {
+    console.error("Error while posting video:", error)
+  })
+}
 </script>
