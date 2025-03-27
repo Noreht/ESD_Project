@@ -25,6 +25,7 @@ const store = createStore({
 
     actions: {
         async logIn(context, { email, password }){
+          console.log("Awaiting firebase...")
           const response = await signInWithEmailAndPassword(auth, email, password)
             if (response) {
                 context.commit('SET_USER', response.user)
