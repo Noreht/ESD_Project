@@ -283,7 +283,9 @@ onMounted(async () => {
 
 function saveVideo(videoId) {
   console.log("saveVideo pressed for:", videoId)
-  axios.post('http://localhost:5000/post_video', {
+  console.log("API URL:", import.meta.env.VITE_API_URL);
+  axios.post(`${import.meta.env.VITE_API_URL}/categorisation` //'http://localhost:5000/post_video'
+  , {
     video_id: videoId
   })
   .then(response => {
