@@ -34,11 +34,25 @@ app.post('/categorisation', async (req, res) => {
 // end of Cat A
 
 
-// Start of Cat B
+// Start of Categories retrieval
+const CAT_RETRIEVAL_URL = 'https://personal-e5asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories'; 
+app.post('/RetrieveAllAlbum', async (req, res) => {
+    console.log("Received request at RetrieveAllAlbum:", req.body);
+    const userEmail = req.query.email
+    try {
+        // posts frontend request to the cat a service 
+        console.log("Gateway initiated")
+        
+        const response = await axios.post(`${CAT_A_SERVICE_URL}/RetrieveAllAlbum`+`?email=${encodeURIComponent(userEmail)}`);
+        
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error forwarding request to CatA service:', error.message);
+        res.status(500).json({ error: 'Error processing video categorisation' });
+    }
+    });
 
-
-
-// End of Cat B
+// End of Categories Retrieval 
 
 
 

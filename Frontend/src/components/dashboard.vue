@@ -1,4 +1,3 @@
-
 <template>
     <div class="min-h-full">
       <Disclosure as="nav" class="border-b border-gray-200 bg-white" v-slot="{ open }">
@@ -138,7 +137,8 @@
                     <p class="text-sm text-gray-500">{{ video.description }}</p>
                     <div class="flex flex-1 flex-col justify-end">
                       <p class="text-sm italic text-gray-500">{{ video.date_published }}</p>
-                      <button type="button" @click.stop="saveVideo(video.id)" class="flex w-1/2 items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
+                      <button type="button" @click.stop="saveVideo(video.id)" class="flex w-1/2 items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
+                      <button type="button" @click.stop="saveSharedAlbum(video.id)" class="flex w-1/2 items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save to Shared Album</button>
                   </div>
                     
                   </div>
@@ -150,18 +150,18 @@
               <div class="flex space-x-4 mb-4">
                 <button
                   v-for="cat in categories"
-                  :key="cat.name"
+                  :key="cat"
                   @click="setCategory(cat)"
-                  :class="[cat.current ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'px-3 py-2 text-sm font-medium border-b-2']">
-                  {{ cat.name }}
+                  :class="[currentCategory === cat ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'px-3 py-2 text-sm font-medium border-b-2']">
+                  {{ cat }}
                 </button>
               </div>
               
               <!-- Grid of Video Cards for the Selected Category -->
               <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
                 <div
-                  v-for="video in filteredVideos"
-                  :key="video.id"
+                  v-for="video in catVideos"
+                  :key="video.Id"
                   class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
                   
                   <video controls class="w-full h-auto" :src="video.videoSrc" playsinline webkit-playsinline preload controlsList="nofullscreen">
@@ -171,17 +171,16 @@
                   
                   <div class="flex flex-1 flex-col space-y-2 p-4">
                     <h3 class="text-sm font-medium text-gray-900">
-                      <a :href="video.videoSrc"> {{ video.title }} </a>
+                      <a :href="video.videoSrc">{{ video.title }}</a>
                     </h3>
                     <p class="text-sm text-gray-500">{{ video.description }}</p>
                     <div class="flex flex-1 flex-col justify-end">
-                      <p class="text-sm italic text-gray-500">{{ video.date_published }}</p>
+                      <p class="text-sm italic text-gray-500">{{ formatDate(video.DateTime) }}</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
            
             <div v-else-if="currentTab.name === 'Recommendations'">
               <p>View recommendations based on your video analysis. Get insights and tips to improve your video content.</p>
@@ -206,18 +205,58 @@ import axios from 'axios';
 
 // Category code
 
-const categories = reactive([
-  { name: 'Action', current: true },
-  { name: 'Drama', current: false },
-  { name: 'Comedy', current: false },
-]);
-
-
+// Master list of videos fetched from the API gateway.
+const savedVideos = ref([])
+// Array of unique categories plus an "All" option.
+const categories = ref([])
+// Currently selected category. Defaults to 'All'.
 const currentCategory = ref(categories[0]);
 
-function setCategory(category) {
-  currentCategory.value = category;
-  categories.forEach(cat => cat.current = (cat.name === category.name));
+async function fetchVideos(userEmail) {
+  try {
+    // Replace with your API gateway URL for RetrieveAllAlbum.
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/RetrieveAllAlbum?email=${encodeURIComponent(userEmail)}`)
+    const data = await response.json()
+    // Assuming data is an array of video objects.
+    videos.value = data
+
+    // Extract the unique categories from the videos (assuming each video has a "Category" property).
+    let cats = data
+      .map(video => video.Category)
+      .filter(category => category && category.trim() !== '')
+    cats = Array.from(new Set(cats)).sort()
+
+    // Prepend an "All" category so users can view all videos.
+    categories.value = ['All', ...cats]
+
+    // Set default category to 'All'
+    currentCategory.value = 'All'
+  } catch (error) {
+    console.error("Error fetching videos:", error)
+  }
+}
+
+onMounted(() => {
+  fetchVideos("LayFoo@is214.com")
+})
+
+// Computed property that filters videos based on the current category selection.
+const catVideos = computed(() => {
+  if (currentCategory.value === 'All') {
+    return savedVideos.value
+  }
+  return savedVideos.value.filter(video => video.Category === currentCategory.value)
+})
+
+// Function to update the current category when a tab is clicked.
+function setCategory(cat) {
+  currentCategory.value = cat
+}
+
+// Helper function to format date strings.
+function formatDate(dateStr) {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString()
 }
 
 
