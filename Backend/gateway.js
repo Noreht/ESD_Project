@@ -36,24 +36,54 @@ app.post('/categorisation', async (req, res) => {
 
 // Start of Categories retrieval
 const CAT_RETRIEVAL_URL = 'https://personal-e5asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories'; 
-app.post('/RetrieveAllAlbum', async (req, res) => {
+app.post('/RetrieveAllAlbums', async (req, res) => {
     console.log("Received request at RetrieveAllAlbum:", req.body);
-    const userEmail = req.query.email
+    const { email, categories } = req.body;
     try {
         // posts frontend request to the cat a service 
         console.log("Gateway initiated")
         
-        const response = await axios.post(`${CAT_A_SERVICE_URL}/RetrieveAllAlbum`+`?email=${encodeURIComponent(userEmail)}`);
+        const response = await axios.post(`${CAT_RETRIEVAL_URL}/RetrievePersonal`, {
+            email,
+            categories
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
         
         res.json(response.data);
     } catch (error) {
-        console.error('Error forwarding request to CatA service:', error.message);
-        res.status(500).json({ error: 'Error processing video categorisation' });
+        console.error('Error forwarding request to Categories Retrieval service:', error.message);
+        res.status(500).json({ error: 'Error processing saved categories retrieval' });
     }
     });
 
 // End of Categories Retrieval 
 
+//Start of Shared Album
+
+const SHARED_ALBUM_URL =
+  //NODE_ENV === 'production'
+    //? process.env.CAT_A_SERVICE_URL:  // place render url here 
+     'http://localhost:5100'; 
+
+app.post('/saveSharedAlbum', async (req, res) => {
+    console.log("Received request at Save Shared Album", req.body);
+    try {
+        // posts frontend request to the cat a service 
+        console.log("Gateway initiated")
+        const response = await axios.post(`${SHARED_ALBUM_URL}/shared-album/add`, req.body);
+        
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error forwarding request to Saved Shared Album service:', error.message);
+        res.status(500).json({ error: 'Error saving to shared album' });
+    }
+    });
+
+
+//End of Shared album 
 
 
 

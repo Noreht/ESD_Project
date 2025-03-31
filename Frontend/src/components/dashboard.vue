@@ -215,7 +215,10 @@ const currentCategory = ref(categories[0]);
 async function fetchVideos(userEmail) {
   try {
     // Replace with your API gateway URL for RetrieveAllAlbum.
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/RetrieveAllAlbum?email=${encodeURIComponent(userEmail)}`)
+    const response = await axios.post(`${import.meta.env.VITE_API_URL}/RetrieveAllAlbums`, {
+          email: userEmail,
+          categories: '' // empty string as specified
+        })
     const data = await response.json()
     // Assuming data is an array of video objects.
     videos.value = data
@@ -324,6 +327,21 @@ function saveVideo(videoId) {
   console.log("saveVideo pressed for:", videoId)
   console.log("API URL:", import.meta.env.VITE_API_URL);
   axios.post(`${import.meta.env.VITE_API_URL}/categorisation` //'http://localhost:5000/post_video'
+  , {
+    video_id: videoId
+  })
+  .then(response => {
+    console.log("Response from backend:", response.data)
+  })
+  .catch(error => {
+    console.error("Error while posting video:", error)
+  })
+}
+
+function saveSharedAlbum(videoId) {
+  console.log("saveSharedAlbum pressed for:", videoId)
+  console.log("API URL:", import.meta.env.VITE_API_URL);
+  axios.post(`${import.meta.env.VITE_API_URL}/saveSharedAlbum` //'http://localhost:5100/shared-album/add'
   , {
     video_id: videoId
   })
