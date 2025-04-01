@@ -3,12 +3,7 @@ import pytesseract
 import json
 import os
 import pika
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 import rabbitmq.amqp_setup as amqp_setup  # Import RabbitMQ setup
-
-app = Flask(__name__)
-CORS(app)
 
 # Define category dictionary
 categories = {
@@ -80,42 +75,49 @@ def process_video(video_path):
 
     return assigned_categories
 
-@app.route("/process_video", methods=["POST"])
-def handle_video_processing():
-    if request.is_json:
-        try:
-            video_data = request.get_json()
-            video_path = video_data.get("video_path")  # Expecting video_path in JSON
+def callback(ch, method, properties, body):
+    """
+    Callback function to process messages from the RabbitMQ queue.
+    """
+    message = json.loads(body)
+    video_id = message.get("video_id")
+    
+    if video_id:
+        print(f"Received video ID: {video_id}")
+        video_path = video_id  # For testing purposes
+        detected_categories = process_video(video_path)
 
-            if not video_path or not os.path.exists(video_path):
-                return jsonify({"code": 400, "message": "Invalid video path"}), 400
+        # Prepare result
+        processed_result = {
+            "video_id": video_id,
+            "categories": detected_categories
+        }
 
-            print(f"\nProcessing video: {video_path}")
-            detected_categories = process_video(video_path)
+        # Publish result to RabbitMQ (or handle as needed)
+        print("Publishing message to RabbitMQ with routing_key='video.processed'")
+        amqp_setup.channel.basic_publish(
+            exchange=amqp_setup.exchange_name,
+            routing_key="video.processed",
+            body=json.dumps(processed_result),
+            properties=pika.BasicProperties(delivery_mode=2)  # Persistent message
+        )
 
-            # Prepare result
-            processed_result = {
-                "video": video_path,
-                "categories": detected_categories
-            }
+def start_consuming():
+    """
+    Start the RabbitMQ consumer to listen for incoming messages.
+    """
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
 
-            # Publish result to RabbitMQ
-            print("Publishing message to RabbitMQ with routing_key='video.processed'")
-            amqp_setup.channel.basic_publish(
-                exchange=amqp_setup.exchange_name,
-                routing_key="video.processed",
-                body=json.dumps(processed_result),
-                properties=pika.BasicProperties(delivery_mode=2)  # Persistent message
-            )
+    # Declare the queue to listen on
+    channel.queue_declare(queue='video_processing')
 
-            return jsonify({"code": 200, "message": "Video processed successfully", "data": processed_result}), 200
+    # Start consuming messages from the queue
+    channel.basic_consume(queue='video_processing', on_message_callback=callback, auto_ack=True)
 
-        except Exception as e:
-            print("Error:", str(e))
-            return jsonify({"code": 500, "message": "Internal Server Error"}), 500
-
-    return jsonify({"code": 400, "message": "Invalid JSON input"}), 400
+    print("Waiting for messages...")
+    channel.start_consuming()
 
 if __name__ == "__main__":
     print("Starting Video Processing Service...")
-    app.run(host="0.0.0.0", port=5200, debug=True)
+    start_consuming()
