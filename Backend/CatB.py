@@ -28,5 +28,5 @@ def start_consumer():
     print("[x] Waiting for messages...")
     channel.start_consuming()
 
-if name == '__main__':
+if __name__ == '__main__':
     start_consumer()

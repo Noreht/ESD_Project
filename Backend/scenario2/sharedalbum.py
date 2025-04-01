@@ -205,6 +205,6 @@ if __name__ == "__main__":
     consumer_thread = threading.Thread(target=start_consumer, daemon=True)
     consumer_thread.start()
 
-    app.run(debug=True)
+    app.run(debug=True, port=5100)
 
 

@@ -1,24 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Login from './components/Login.vue';
-import App from './components/App.vue';
-import Dashboard from './components/dashboard.vue';
+import Login from '../components/Login.vue';
+import App from '../App.vue';
+import Dashboard from '../components/dashboard.vue';
 
 
 const routes = [
         {
         path: '/login',
-        name: 'login',
+        name: 'Login',
         component: Login
-    },
-    {
-        path: '/app',
-        name: 'Home',
-        component: App
     },
     {
         path: '/',
         name: 'Dashboard',
-        component: Dashboard
+        component: Dashboard,
+        meta: { requiresAuth: true }
     },
 ]
 
@@ -28,4 +24,13 @@ const router = createRouter({
     routes
   })
 
-  export default router      
+router.beforeEach((to, from, next) => {
+const isAuthenticated = localStorage.getItem('authToken')
+if (to.meta.requiresAuth && !isAuthenticated) {
+    next({ name: 'Login' })
+} else {
+    next()
+}
+})
+  
+export default router      
