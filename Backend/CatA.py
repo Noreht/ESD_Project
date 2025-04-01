@@ -1,53 +1,46 @@
-# CatA.py
-from flask import Flask, request, jsonify
-import pika
-import json
-import sqlite3  # Change to actual DB in production
-from flask_cors import CORS, cross_origin
+import requests
 
-url = "localhost"
-app = Flask(__name__)
-CORS(
-    app,
-    resources={
-        r"/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE"],
-            "allow_headers": "Content-Type,Authorization",
-        }
-    },
-)
-# AMQP Connection setup
-def publish_to_queue(video_id):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(url))
-    channel = connection.channel()
-    channel.queue_declare(queue='video_processing')
-    message = json.dumps({"video_id": video_id})
-    channel.basic_publish(exchange='', routing_key='video_processing', body=message)
-    connection.close()
+OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories"
 
-# DB Check Function
-def check_categories(video_id):
-    conn = sqlite3.connect('categories.db')  # Replace with actual DB
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM categories WHERE video_id = ?", (video_id,))
-    result = cursor.fetchone()[0]
-    conn.close()
-    return result > 0
+def video_exists(video_id, category, email):
+    url = f"{OUTSYSTEMS_BASE_URL}/VideoExists"
+    payload = {
+        "VideoId": video_id,
+        "category": category,
+        "email": email
+    }
 
-@app.route('/post_video', methods=['POST'])
-@cross_origin() 
-def receive_video():
-    data = request.get_json()
-    video_id = data.get("video_id")
-    
-    if not video_id:
-        return jsonify({"error": "Missing video_id"}), 400
-    
-    if not check_categories(video_id):
-        publish_to_queue(video_id)
-    
-    return jsonify({"message": "Processing started"})
+    response = requests.post(url, json=payload)
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    if response.status_code == 200:
+        return response.text.strip().lower() == "true"
+    else:
+        print("Error checking video existence:", response.status_code)
+        print(response.text)
+        return False  # Assume it doesn't exist if the check fails
+
+def insert_video(video_id, category, email):
+    url = f"{OUTSYSTEMS_BASE_URL}/InsertPersonal"
+    payload = {
+        "VideoId": video_id,
+        "category": category,
+        "email": email
+    }
+
+    response = requests.post(url, json=payload)
+
+    if response.status_code == 200:
+        print("Video inserted into OutSystems")
+    else:
+        print("Error inserting video:", response.status_code)
+        print(response.text)
+
+def handle_video_post(video_id, email, category=""):
+    # Step 1: Check if it exists
+    exists = video_exists(video_id, category, email)
+
+    if exists:
+        print("Video already exists in OutSystems. Skipping insert.")
+    else:
+        # Step 2: Insert if it doesn't exist
+        insert_video(video_id, category, email)
