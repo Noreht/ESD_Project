@@ -1,32 +1,71 @@
-# CatB.py
-import pika
 import json
-import sqlite3  # Change to actual DB in production
+import pika
+import requests
+import sys
+import os
 
-# AMQP Connection setup
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # Ensure local import works
+import rabbitmq.amqp_setup as amqp_setup  # Same setup used in VidProcRabbmq.py
+
+# OutSystems API base URL
+OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories"
+
+def insert_into_outsystems(video_id, category, email="zuwei@example.com"):
+    """
+    Calls OutSystems API to insert video + category.
+    """
+    url = f"{OUTSYSTEMS_BASE_URL}/InsertPersonal"
+    payload = {
+        "VideoId": video_id,
+        "category": category,
+        "email": email
+    }
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            print(f"Inserted into OutSystems: {video_id} - {category}")
+        else:
+            print(f"Failed to insert. Status: {response.status_code}")
+            print("Response:", response.text)
+    except Exception as e:
+        print("Error while calling OutSystems:", str(e))
+
 def callback(ch, method, properties, body):
-    message = json.loads(body)
-    video_id = message.get("video_id")
-    categories = message.get("categories", [])  # Expected from video processing
-    
-    if video_id and categories:
-        update_db(video_id, categories)
+    """
+    RabbitMQ message handler.
+    """
+    try:
+        print("Received message from RabbitMQ")
+        data = json.loads(body)
 
-def update_db(video_id, categories):
-    conn = sqlite3.connect('categories.db')  # Replace with actual DB
-    cursor = conn.cursor()
-    cursor.execute("INSERT OR IGNORE INTO categories (video_id, category) VALUES (?, ?)", (video_id, ', '.join(categories)))
-    conn.commit()
-    conn.close()
+        video_id = data.get("video")
+        category = data.get("categories", "Uncategorized")
 
-# AMQP Consumer Setup
-def start_consumer():
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    channel = connection.channel()
-    channel.queue_declare(queue='categories_update')
-    channel.basic_consume(queue='categories_update', on_message_callback=callback, auto_ack=True)
-    print("[x] Waiting for messages...")
-    channel.start_consuming()
+        if video_id:
+            insert_into_outsystems(video_id, category)
+        else:
+            print("No video_id found in message:", data)
 
-if __name__ == '__main__':
-    start_consumer()
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    except Exception as e:
+        print("Error processing message:", str(e))
+        ch.basic_nack(delivery_tag=method.delivery_tag)
+
+def start_consuming():
+    """
+    Begin consuming messages from RabbitMQ.
+    """
+    queue_name = "video.processed"
+    amqp_setup.channel.basic_consume(queue=queue_name, on_message_callback=callback)
+    print(f"Listening for messages on queue '{queue_name}'...")
+    amqp_setup.channel.start_consuming()
+
+if __name__ == "__main__":
+    print("Starting CatB listener...")
+    start_consuming()

@@ -86,9 +86,28 @@ app.post('/saveSharedAlbum', async (req, res) => {
 //End of Shared album 
 
 
-
-
-
+// Start of GetPastWeek
+const CAT_GETPASTWEEK_URL = 'https://personal-e5asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories'; 
+app.post('/GetPastWeek', async (req, res) => {
+    console.log("Received request at GetPastWeek:", req.body);
+    const {email, category} = req.body;
+    try {
+        // posts frontend request to the cat a service 
+        console.log("Gateway initiated")
+        
+        const response = await axios.post(`${CAT_GETPASTWEEK_URL}/GetPastWeek`, {email, category}, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error forwarding request to GetPastWeek service:', error.message);
+        res.status(500).json({ error: 'Error processing GetPastWeek retrieval' });
+    }
+    });
+// End of GetPastWeek
 
 
 
