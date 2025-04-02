@@ -24,7 +24,7 @@ channel.queue_bind(exchange=exchange_name, queue=queue_name, routing_key=routing
 # === OutSystems endpoint ===
 OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories"
 
-def insert_into_outsystems(video_id, category, email="zuwei@example.com"):
+def insert_into_outsystems(video_id, category, email):
     url = f"{OUTSYSTEMS_BASE_URL}/InsertPersonal"
     payload = {
         "VideoId": video_id,
@@ -39,7 +39,7 @@ def insert_into_outsystems(video_id, category, email="zuwei@example.com"):
     try:
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code == 200:
-            print(f"Inserted: {video_id} → {category}")
+            print(f"Inserted: {video_id} → {category} for {email}")
         else:
             print(f"Failed to insert. Status: {response.status_code}")
             print("Response:", response.text)
@@ -53,12 +53,14 @@ def callback(ch, method, properties, body):
         data = json.loads(body)
         video_id = data.get("video")
         category = data.get("categories", "Uncategorized")
+        email = data.get("email")
 
-        if video_id:
-            insert_into_outsystems(video_id, category)
-        else:
-            print("No video_id in message:", data)
+        if not video_id or not email:
+            print("Missing video_id or email in message:", data)
+            ch.basic_nack(delivery_tag=method.delivery_tag)
+            return
 
+        insert_into_outsystems(video_id, category, email)
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     except Exception as e:
