@@ -109,7 +109,35 @@ app.post('/GetPastWeek', async (req, res) => {
     });
 // End of GetPastWeek
 
+//start of Find Top 5 
+const FIND_TOP_5_URL = 'http://localhost:5300'; 
 
+app.get('/LoadDashboard', async (req, res) => {
+  const email = req.query.email; 
+
+  console.log("Received request at LoadDashboard", req.query);
+
+  if (!email) {
+    return res.status(400).json({ error: 'User email missing' });
+  }
+  try {
+      // posts frontend request to the cat a service 
+      console.log("Gateway initiated")
+      
+      const response = await axios.post(`${FIND_TOP_5_URL}/find_top_5`, {email}, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      
+      res.json(response.data);
+  } catch (error) {
+      console.error('Error forwarding request to GetPastWeek service:', error.message);
+      res.status(500).json({ error: 'Error processing GetPastWeek retrieval' });
+  }
+  });
+
+//End of Find Top 5 
 
 
 
