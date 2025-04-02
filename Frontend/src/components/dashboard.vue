@@ -263,7 +263,6 @@ async function fetchVideos(userEmail) {
   try {
     // Replace with your API gateway URL for RetrieveAllAlbum.
     const response = await axios.post(`${import.meta.env.VITE_API_URL}/RetrieveAllAlbums`, {
-        video: videoId,   
         email: userEmail,
           categories: '' // empty string as specified
         })
@@ -288,7 +287,7 @@ async function fetchVideos(userEmail) {
 }
 
 onMounted(() => {
-  fetchVideos("LayFoo@is214.com")
+  fetchVideos(userEmail)
 })
 
 // Computed property that filters videos based on the current category selection.
