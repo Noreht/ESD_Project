@@ -58,8 +58,11 @@ export default {
         .then((userCredential) => {
           console.log('Successfully logged in!');
           localStorage.setItem('authToken', userCredential.user.uid);
+          store.commit('SET_USER', {
+            email: userCredential.user.email
+           })
 
-          router.push('/');
+          router.push('/dashboard');
         })
         .catch(error => {
           console.log(error.code);

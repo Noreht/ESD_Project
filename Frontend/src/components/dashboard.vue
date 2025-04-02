@@ -114,7 +114,16 @@
           <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <!-- Conditional content based on the current tab -->
             <div v-if="currentTab.name === 'Overview'">
-              <p>This is the overview of your OCR video analysis service. Here you can see summaries and performance metrics.</p>
+              <p>This is the overview of your OCR video analysis service. Here are your top saved categories</p>
+              <div v-if="top5Categories != null">
+                <div v-for="top5 in top5Categories">
+                  <h1> You have saved videos! Here are your top categories</h1>
+                  <h2>{{ top5 }}</h2>
+                </div>
+              </div>
+              <div v-else>
+                <h1>Save a video! You have currently no saved videos.</h1>
+              </div>
             </div>
             <div v-else-if="currentTab.name === 'Save Video'">
               <p>Choose a video to save</p>
@@ -202,6 +211,44 @@ import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuIt
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import metadata from '../assets/videoMetadata.json';
 import axios from 'axios';
+
+
+const userId = ref('');
+const top5Categories = ref([]);
+const lastWeekCategories = ref([]);
+
+
+const props = defineProps({
+  email: String
+})
+
+const userEmail = props.email;
+//Dashboard code 
+
+console.log('Email passed to dashboard:', userEmail)
+
+onMounted(async () => {
+  if (!userEmail) {
+    console.error('knncccb never log in');
+    return;
+  }
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/LoadDashboard`, {
+      params: { email: userEmail}
+    });
+    const data = response.data;
+
+    userId.value = data.UserId;
+    top5Categories.value = data.top_5_categories; 
+    lastWeekCategories.value = data.last_week_categories;
+
+    console.log(data);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  }
+});
+
+console.log("top5",top5Categories);
 
 // Category code
 

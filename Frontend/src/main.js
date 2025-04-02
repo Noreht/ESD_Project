@@ -5,8 +5,8 @@ import App from './App.vue'
 import { initializeApp } from "firebase/app";
 import { getAuth } from 'firebase/auth'
 import router from './routes'
-
-createApp(App).use(router).mount('#app')
+import store from './store';
+createApp(App).use(router).use(store).mount('#app')
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,

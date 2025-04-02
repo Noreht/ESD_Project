@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:css": "tailwindcss -i ./src/main.css -o ./dist/output.css --minify",
-    "start": "serve -s dist"
+    "build:css": "tailwindcss -i ./src/main.css -o ./dist/output.css --minify"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
