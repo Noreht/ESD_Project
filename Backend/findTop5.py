@@ -22,13 +22,23 @@ def get_top_5(records):
     top_5 = [category for category, _ in category_counts.most_common(5)]
     return ",".join(top_5)
 
-email = "LayFoo@is214.com"
+
 @app.route('/find_top_5', methods=['POST'])
 def find_top_5():
+   
     try:
+       
+        data = request.get_json()
+        email = data.get('email')
+
+        if not email:
+            return jsonify({"error": "Email parameter missing"}), 400
+
+        print("Get Top 5 Past Week activated for email:", email)
         # this step should be through the api gateway. fuck my life legit
         # Step 1: Fetch category records from Categories Service
-        category_response = requests.post(f"{GATEWAY_URL}/GetPastWeek", json={"email":"peepeepoopoo@gmail.com", "category":""})
+        print("Get Top 5 Past Week activated for this Email")
+        category_response = requests.post(f"{GATEWAY_URL}/GetPastWeek", json={"email":email, "category":""})
         if category_response.status_code == 500:
             return jsonify({"error": "User does not exist"}) #create new entry for user, code 201(?)
 

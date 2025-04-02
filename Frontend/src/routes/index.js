@@ -6,15 +6,17 @@ import Dashboard from '../components/dashboard.vue';
 
 const routes = [
         {
-        path: '/login',
+        path: '/',
         name: 'Login',
-        component: Login
+        component: Login,
+        props: true
     },
     {
-        path: '/',
+        path: '/dashboard',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true },
+        props: true,
     },
 ]
 
