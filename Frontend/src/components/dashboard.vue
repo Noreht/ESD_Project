@@ -263,7 +263,8 @@ async function fetchVideos(userEmail) {
   try {
     // Replace with your API gateway URL for RetrieveAllAlbum.
     const response = await axios.post(`${import.meta.env.VITE_API_URL}/RetrieveAllAlbums`, {
-          email: userEmail,
+        video: videoId,   
+        email: userEmail,
           categories: '' // empty string as specified
         })
     const data = await response.json()
@@ -371,11 +372,14 @@ onMounted(async () => {
   
 
 function saveVideo(videoId) {
+  const userEmail = props.email || user.email;  // fallback if props.email not passed
   console.log("saveVideo pressed for:", videoId)
-  console.log("API URL:", import.meta.env.VITE_API_URL);
-  axios.post(`${import.meta.env.VITE_API_URL}/categorisation` //'http://localhost:5000/post_video'
-  , {
-    video_id: videoId
+  console.log("Sending:", { video: videoId, email: userEmail, categories: '' });
+
+  axios.post(`${import.meta.env.VITE_API_URL}/categorisation`, {
+    video: videoId,
+    email: userEmail,
+    categories: ''  // You can set actual category if available
   })
   .then(response => {
     console.log("Response from backend:", response.data)

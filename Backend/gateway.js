@@ -15,21 +15,39 @@ const NODE_ENV =  'development'; //process.env.NODE_ENV ||
 const CAT_A_SERVICE_URL =
   //NODE_ENV === 'production'
     //? process.env.CAT_A_SERVICE_URL:  // place render url here 
-     'http://localhost:5000'; 
+     'http://localhost:5001'; 
 
-app.post('/categorisation', async (req, res) => {
-    console.log("Received request at /categorisation:", req.body);
-    try {
-        // posts frontend request to the cat a service 
-        console.log("Gateway initiated")
-        const response = await axios.post(`${CAT_A_SERVICE_URL}/post_video`, req.body);
+// app.post('/categorisation', async (req, res) => {
+//     console.log("Received request at /categorisation:", req.body);
+//     try {
+//         // posts frontend request to the cat a service 
+//         console.log("Gateway initiated")
+//         const response = await axios.post(`${CAT_A_SERVICE_URL}/post_video`, req.body);
         
-        res.json(response.data);
-    } catch (error) {
-        console.error('Error forwarding request to CatA service:', error.message);
-        res.status(500).json({ error: 'Error processing video categorisation' });
-    }
-    });
+//         res.json(response.data);
+//     } catch (error) {
+//         console.error('Error forwarding request to CatA service:', error.message);
+//         res.status(500).json({ error: 'Error processing video categorisation' });
+//     }
+//     });
+app.post('/categorisation', async (req, res) => {
+  console.log("Received request at /categorisation:", req.body);
+  try {
+      console.log("Gateway initiated");
+      const response = await axios.post(`${CAT_A_SERVICE_URL}/post_video`, req.body, {
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer fake-token'  // <-- just needs to exist because CORS allows it
+          }
+      });
+
+      res.json(response.data);
+  } catch (error) {
+      console.error('Error forwarding request to CatA service:', error.message);
+      res.status(500).json({ error: 'Error processing video categorisation' });
+  }
+});
+
 
 // end of Cat A
 
