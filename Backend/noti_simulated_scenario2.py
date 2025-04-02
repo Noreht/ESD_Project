@@ -15,7 +15,7 @@ def callback(ch, method, properties, body):
 
     # Determine which queue the message came from based on the queue name
     if method.routing_key == SHARED_ALBUM_QUEUE:
-        print("📸 Received new video data from []:")
+        print("📸 Received new video data from [Shared Album]:")
         print(json.dumps(message, indent=2))
 
         print(f"[Notification Microservice] sending to {message['subscriber_list']}")

@@ -36,8 +36,12 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_KEY")
 TABLE_NAME = "sharedalbum"
 
-# RabbitMQ Configuration
-RABBITMQ_HOST = "localhost"
+# RabbitMQ Configuration (Get from Environment)
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")  # Default to localhost if not set
+port = int(os.getenv("RABBITMQ_PORT", 5672))
+username = os.getenv("RABBITMQ_USER", "myuser") #! (this may be 'guest')
+password = os.getenv("RABBITMQ_PASS", "mypassword")
+
 CATEGORIES_TO_SHAREDALBUM_QUEUE = "categories_to_sharedalbum_queue"
 NOTIFICATIONS_QUEUE = "notifications_queue"
 
@@ -137,7 +141,7 @@ def start_consumer():
     channel.start_consuming()
 
 
-# TODO2: Returns msg to UI "Wait User!" upon a POST request to Shared Album microservice
+# TODO2: Returns msg to UI "Wait User!" upon a POST request to Shared Album microservice ✅
 @app.route("/shared-album/add", methods=["POST"])
 def add_video_to_shared_album():
     data = request.get_json()  # Get the JSON from the UI
