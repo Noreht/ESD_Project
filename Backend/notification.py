@@ -2,6 +2,8 @@ import os
 import pika
 import threading
 import smtplib
+import twilio
+import twilio.rest
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from twilio.rest import Client
