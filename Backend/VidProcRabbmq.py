@@ -81,26 +81,30 @@ def callback(ch, method, properties, body):
     """
     message = json.loads(body)
     video_id = message.get("video_id")
-    
-    if video_id:
-        print(f"Received video ID: {video_id}")
+    email = message.get("email")  # Get email from the incoming message
+
+    if video_id and email:
+        print(f"Received video ID: {video_id} for email: {email}")
         video_path = video_id  # For testing purposes
         detected_categories = process_video(video_path)
 
-        # Prepare result
+        # Prepare result to send to CatB
         processed_result = {
-            "video_id": video_id,
-            "categories": detected_categories
+            "video": video_id,
+            "categories": detected_categories,
+            "email": email  # Include email for CatB to use
         }
 
-        # Publish result to RabbitMQ (or handle as needed)
         print("Publishing message to RabbitMQ with routing_key='video.processed'")
         amqp_setup.channel.basic_publish(
             exchange=amqp_setup.exchange_name,
             routing_key="video.processed",
             body=json.dumps(processed_result),
-            properties=pika.BasicProperties(delivery_mode=2)  # Persistent message
+            properties=pika.BasicProperties(delivery_mode=2)
         )
+    else:
+        print("Missing video_id or email in incoming message:", message)
+
 
 def start_consuming():
     """
