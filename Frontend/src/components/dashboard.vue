@@ -388,7 +388,6 @@ function saveVideo(videoId) {
 }
 
 function saveSharedAlbum(videoId) {
-  const userEmail = user.email;  // faulty email code
 
   console.log("saveSharedAlbum pressed for:", videoId)
   console.log("API URL:", import.meta.env.VITE_API_URL);
@@ -396,7 +395,7 @@ function saveSharedAlbum(videoId) {
     , {
       'video_id': videoId,
       'album_id': "Korea Trip",
-      'input_person_email': "chrisposkitt@is214.com"
+      'input_person_email': userEmail
     }
   )
     .then(response => {
