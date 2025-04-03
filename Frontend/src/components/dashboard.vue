@@ -157,18 +157,13 @@
             <div v-else-if="currentTab.name === 'Categories'">
               <!-- Dynamic Category Tabs -->
               <div class="flex space-x-4 mb-4">
-                <div v-for="cat in categories" :key="cat.name">
-                  <button
-                    @click="setCategory(cat)"
-                    :class="[
-                      currentCategory && currentCategory.name === cat.name
-                        ? 'border-indigo-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                      'px-3 py-2 text-sm font-medium border-b-2'
-                    ]">
-                    {{ cat.name }}
-                  </button>
-                </div>
+                <button
+                  v-for="cat in categories"
+                  :key="cat"
+                  @click="setCategory(cat)"
+                  :class="[currentCategory === cat ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'px-3 py-2 text-sm font-medium border-b-2']">
+                  {{ cat }}
+                </button>
               </div>
               
               <!-- Grid of Video Cards for the Selected Category -->
@@ -178,16 +173,8 @@
                   :key="video.Id"
                   class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
                   
-                  <h2>Hello!</h2>
-                  <video
-                    controls
-                    class="w-full h-auto"
-                    :src="video.videoId"
-                    playsinline
-                    webkit-playsinline
-                    preload
-                    controlsList="nofullscreen">
-                    <source type="video.videoId" :poster="video.poster"> <!--- FIX THIS RIGHT NOW-->
+                  <video controls class="w-full h-auto" :src="video.videoSrc" playsinline webkit-playsinline preload controlsList="nofullscreen">
+                    <source type="video/mp4" :poster="video.poster">
                     Your browser does not support the video tag.
                   </video>
                   
@@ -275,16 +262,16 @@ async function fetchVideos(userEmail) {
         categories: '' // empty string as specified
         })
     const data = response.data; 
-    videos.value = data;
+    const categorized_videos = data;
 
     // Group videos by their category.
     // If a video has an empty category, you could default it to 'Uncategorized'.
-    const groupedCategories = data.reduce((groups, video) => {
-      const category = video.Category && video.Category.trim() !== '' ? video.Category : 'Uncategorized';
+    const groupedCategories = data.reduce((groups, categorized_videos) => {
+      const category = categorized_videos.Category && categorized_videos.Category.trim() !== '' ? categorized_videos.Category : 'Uncategorized';
       if (!groups[category]) {
         groups[category] = [];
       }
-      groups[category].push(video);
+      groups[category].push(categorized_videos);
       return groups;
     }, {});
 
@@ -294,12 +281,12 @@ async function fetchVideos(userEmail) {
       .sort() // sort the categories alphabetically (adjust sorting if needed)
       .map(category => ({
         name: category,
-        videos: groupedCategories[category]
+        categorized_videos: groupedCategories[category]
       }));
 
     // Prepend an "All" category which contains all videos.
     categories.value = [
-      { name: 'All', videos: data },
+      { name: 'All', categorized_videos: data },
       ...categoryList
     ];
 
