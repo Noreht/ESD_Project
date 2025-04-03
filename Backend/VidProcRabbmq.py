@@ -41,6 +41,7 @@ scenario2_categories = {
 VIDEO_PROCESSING_QUEUE = "video_processing_queue"
 SCENARIO_2_VIDEO_PROCESSING_QUEUE = "scenario_2_video_processing_queue"
 
+
 def process_video(video_path):
     """
     Process the given video file and return detected categories.
@@ -84,7 +85,7 @@ def process_video(video_path):
 
     # Assign category (if multiple categories are found, return all)
     assigned_categories = ",".join(detected_categories) if detected_categories else "Uncategorized"
-
+    print(assigned_categories)
     return assigned_categories
 
 def scenario2_process_video(video_path):
@@ -136,18 +137,22 @@ def callback(ch, method, properties, body):
     message = json.loads(body)
     video_id = message.get("video_id")
     album_id = message.get("album_id")
-    input_person_email = message.get("input_person_email")
+    input_person_email = message.get("email")
+
+    print(message)
 
     if video_id:
         print(f"Received video ID: {video_id}")
-        if method.routing_key == VIDEO_PROCESSING_QUEUE:
-            video_path = video_id  # For testing purposes
+        if method.routing_key == "video.to_process":
+            video_path = "../Frontend/src/assets/videos/" + video_id  # For testing purposes
+            print("Video Path", video_path)
             detected_categories = process_video(video_path)
 
             # Prepare result for video processing
             processed_result = {
                 "video_id": video_id,
-                "categories": detected_categories
+                "categories": detected_categories, 
+                "email": input_person_email
             }
 
             # Publish result to RabbitMQ (or handle as needed)
@@ -182,8 +187,13 @@ def start_consuming():
     channel.queue_declare(queue=SCENARIO_2_VIDEO_PROCESSING_QUEUE)
 
     # Start consuming messages from both queues
+    channel.queue_bind(queue=VIDEO_PROCESSING_QUEUE,exchange="video_processing_topic", routing_key="video.to_process")
     channel.basic_consume(queue=VIDEO_PROCESSING_QUEUE, on_message_callback=callback, auto_ack=True)
+
     channel.basic_consume(queue=SCENARIO_2_VIDEO_PROCESSING_QUEUE, on_message_callback=callback, auto_ack=True)
+
+    print(VIDEO_PROCESSING_QUEUE)
+    print(SCENARIO_2_VIDEO_PROCESSING_QUEUE)
 
     print("Waiting for messages from both queues...")
     channel.start_consuming()
@@ -191,3 +201,4 @@ def start_consuming():
 if __name__ == "__main__":
     print("Starting Video Processing Service...")
     start_consuming()
+

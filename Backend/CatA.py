@@ -2,8 +2,10 @@ from flask import Flask, request, jsonify
 import requests
 import pika
 import json
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # === OutSystems endpoint ===
 OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories"
@@ -29,7 +31,7 @@ channel.exchange_declare(exchange=exchange_name, exchange_type=exchange_type, du
 
 # === OutSystems interaction ===
 def video_exists(video_id, category, email):
-    url = f"{OUTSYSTEMS_BASE_URL}/VideoExists"
+    url = f"http://localhost:3000/CheckExists"
     payload = {
         "VideoId": video_id,
         "category": category,
@@ -39,7 +41,9 @@ def video_exists(video_id, category, email):
     response = requests.post(url, json=payload, headers=HEADERS)
 
     if response.status_code == 200:
+        print("Theron is the best")
         return response.text.strip().lower() == "true"
+        
     else:
         print("Error checking video existence:", response.status_code)
         print(response.text)
@@ -96,7 +100,7 @@ def post_video():
             "error": "Missing video or email",
             "data_received": data
         }), 400
-
+    print("Post video", video_id, email, category)
     try:
         handle_video_post(video_id, email, category)
         return jsonify({"message": "Video processed"}), 200

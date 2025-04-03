@@ -25,7 +25,7 @@ channel.queue_bind(exchange=exchange_name, queue=queue_name, routing_key=routing
 OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories"
 
 def insert_into_outsystems(video_id, category, email):
-    url = f"{OUTSYSTEMS_BASE_URL}/InsertPersonal"
+    url = f"http://localhost:3000/InsertProcessedVideo"
     payload = {
         "VideoId": video_id,
         "category": category,
@@ -56,7 +56,7 @@ def callback(ch, method, properties, body):
     try:
         print("[CatB] Received message from RabbitMQ:", body)
         data = json.loads(body)
-        video_id = data.get("video")
+        video_id = data.get("video_id")
         category = data.get("categories", "Uncategorized")
         email = data.get("email")
 
@@ -74,7 +74,8 @@ def callback(ch, method, properties, body):
 
 # === Start listening ===
 def start_consuming():
-    channel.basic_consume(queue=queue_name, on_message_callback=callback)
+    channel.queue_bind(queue="Processed_Videos", exchange="video_processing_topic", routing_key="video.processed")
+    channel.basic_consume(queue="Processed_Videos", on_message_callback=callback, auto_ack=False)
     print(f"[CatB] Listening on queue '{queue_name}'...")
     channel.start_consuming()
 

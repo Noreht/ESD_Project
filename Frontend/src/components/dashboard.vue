@@ -114,11 +114,11 @@
           <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <!-- Conditional content based on the current tab -->
             <div v-if="currentTab.name === 'Overview'">
-              <p>This is the overview of your OCR video analysis service. Here are your top saved categories</p>
+              <p>This is the overview of your OCR video analysis service. </p>
               <div v-if="top5Categories != null">
+                <h1> You have saved videos! Here are your top categories</h1>
                 <div v-for="top5 in top5Categories">
-                  <h1> You have saved videos! Here are your top categories</h1>
-                  <h2>{{ top5 }}</h2>
+                  <h1>{{ top5 }}</h1>
                 </div>
               </div>
               <div v-else>
@@ -157,13 +157,18 @@
             <div v-else-if="currentTab.name === 'Categories'">
               <!-- Dynamic Category Tabs -->
               <div class="flex space-x-4 mb-4">
-                <button
-                  v-for="cat in categories"
-                  :key="cat"
-                  @click="setCategory(cat)"
-                  :class="[currentCategory === cat ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'px-3 py-2 text-sm font-medium border-b-2']">
-                  {{ cat }}
-                </button>
+                <div v-for="cat in categories" :key="cat.name">
+                  <button
+                    @click="setCategory(cat)"
+                    :class="[
+                      currentCategory && currentCategory.name === cat.name
+                        ? 'border-indigo-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                      'px-3 py-2 text-sm font-medium border-b-2'
+                    ]">
+                    {{ cat.name }}
+                  </button>
+                </div>
               </div>
               
               <!-- Grid of Video Cards for the Selected Category -->
@@ -173,8 +178,16 @@
                   :key="video.Id"
                   class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
                   
-                  <video controls class="w-full h-auto" :src="video.videoSrc" playsinline webkit-playsinline preload controlsList="nofullscreen">
-                    <source type="video/mp4" :poster="video.poster">
+                  <h2>Hello!</h2>
+                  <video
+                    controls
+                    class="w-full h-auto"
+                    :src="video.videoId"
+                    playsinline
+                    webkit-playsinline
+                    preload
+                    controlsList="nofullscreen">
+                    <source type="video.videoId" :poster="video.poster"> <!--- FIX THIS RIGHT NOW-->
                     Your browser does not support the video tag.
                   </video>
                   
@@ -189,11 +202,6 @@
                   </div>
                 </div>
               </div>
-            </div>
-           
-            <div v-else-if="currentTab.name === 'Recommendations'">
-              <p>View recommendations based on your video analysis. Get insights and tips to improve your video content.</p>
-              
             </div>
             <div v-else-if="currentTab.name === 'Shared Albums'">
               <p>Share videos with your friends!</p>
@@ -229,7 +237,7 @@ console.log('Email passed to dashboard:', userEmail)
 
 onMounted(async () => {
   if (!userEmail) {
-    console.error('knncccb never log in');
+    //console.error('knncccb never log in');
     return;
   }
   try {
@@ -239,10 +247,10 @@ onMounted(async () => {
     const data = response.data;
 
     userId.value = data.UserId;
-    top5Categories.value = data.top_5_categories; 
-    lastWeekCategories.value = data.last_week_categories;
+    top5Categories.value = data.top_5_categories.split(","); 
+    lastWeekCategories.value = data.last_week_categoriess.split(",");
 
-    console.log(data);
+    //console.log(data);
   } catch (error) {
     console.error("Error fetching data:", error);
   }
@@ -264,25 +272,42 @@ async function fetchVideos(userEmail) {
     // Replace with your API gateway URL for RetrieveAllAlbum.
     const response = await axios.post(`${import.meta.env.VITE_API_URL}/RetrieveAllAlbums`, {
         email: userEmail,
-          categories: '' // empty string as specified
+        categories: '' // empty string as specified
         })
-    const data = await response.json()
-    // Assuming data is an array of video objects.
-    videos.value = data
+    const data = response.data; 
+    videos.value = data;
 
-    // Extract the unique categories from the videos (assuming each video has a "Category" property).
-    let cats = data
-      .map(video => video.Category)
-      .filter(category => category && category.trim() !== '')
-    cats = Array.from(new Set(cats)).sort()
+    // Group videos by their category.
+    // If a video has an empty category, you could default it to 'Uncategorized'.
+    const groupedCategories = data.reduce((groups, video) => {
+      const category = video.Category && video.Category.trim() !== '' ? video.Category : 'Uncategorized';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(video);
+      return groups;
+    }, {});
 
-    // Prepend an "All" category so users can view all videos.
-    categories.value = ['All', ...cats]
+    // Convert the grouped object into an array of category objects.
+    // Each object has a name and a list of videos.
+    const categoryList = Object.keys(groupedCategories)
+      .sort() // sort the categories alphabetically (adjust sorting if needed)
+      .map(category => ({
+        name: category,
+        videos: groupedCategories[category]
+      }));
 
+    // Prepend an "All" category which contains all videos.
+    categories.value = [
+      { name: 'All', videos: data },
+      ...categoryList
+    ];
+
+    console.log("Categories", categories.value);
     // Set default category to 'All'
-    currentCategory.value = 'All'
+    currentCategory.value = 'All';
   } catch (error) {
-    console.error("Error fetching videos:", error)
+    console.error("Error fetching videos:", error);
   }
 }
 
@@ -312,7 +337,7 @@ function formatDate(dateStr) {
 
 const user = {
   name: 'Poskitt',
-  email: 'tom@example.com',
+  email: userEmail,
   imageUrl:
     'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
 }
@@ -373,12 +398,12 @@ onMounted(async () => {
 function saveVideo(videoId) {
   const userEmail = props.email || user.email;  // fallback if props.email not passed
   console.log("saveVideo pressed for:", videoId)
-  console.log("Sending:", { video: videoId, email: userEmail, categories: '' });
+  console.log("Sending:", { video: videoId, email: userEmail, category: '' });
 
   axios.post(`${import.meta.env.VITE_API_URL}/categorisation`, {
     video: videoId,
     email: userEmail,
-    categories: ''  // You can set actual category if available
+    category: ''  // You can set actual category if available
   })
   .then(response => {
     console.log("Response from backend:", response.data)

@@ -71,6 +71,7 @@ app.post('/RetrieveAllAlbums', async (req, res) => {
           });
         
         res.json(response.data);
+        console.log(response.data)
     } catch (error) {
         console.error('Error forwarding request to Categories Retrieval service:', error.message);
         res.status(500).json({ error: 'Error processing saved categories retrieval' });
@@ -158,7 +159,59 @@ app.get('/LoadDashboard', async (req, res) => {
 //End of Find Top 5 
 
 
+// Check Video Exists 
+const CHECK_EXISTS_URL = 'https://personal-e5asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories'; 
+app.post('/CheckExists', async (req, res) => {
+    console.log("Received request at Check Exists:", req.body);
+    const { VideoId, category, email } = req.body;
+    try {
+        // posts frontend request to the cat a service 
+        console.log("Gateway initiated")
+        
+        const response = await axios.post(`${CAT_RETRIEVAL_URL}/VideoExists`, {
+            VideoId,
+            category,
+            email
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error forwarding request to Check Exists service:', error.message);
+        res.status(500).json({ error: 'Error processing check exists function' });
+    }
+    });
+//
 
+//Start of Insert Video
+const INSERT_URL = 'https://personal-e5asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories'; 
+app.post('/InsertProcessedVideo', async (req, res) => {
+  console.log("Received request at Insert Processed Video:", req.body);
+  const { VideoId, category, email } = req.body;
+  try {
+      // posts frontend request to the cat a service 
+      console.log("Gateway initiated")
+      
+      const response = await axios.post(`${CAT_RETRIEVAL_URL}/InsertPersonal`, {
+          VideoId,
+          category,
+          email
+        }, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      
+      res.json(response.data);
+  } catch (error) {
+      console.error('Error forwarding request to Insert Processed service:', error.message);
+      res.status(500).json({ error: 'Error inserting video' });
+  }
+  });
+//End of Insert Video
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT,'0.0.0.0', () => {
