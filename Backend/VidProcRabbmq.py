@@ -3,9 +3,9 @@ import pytesseract
 import json
 import os
 import pika
-import rabbitmq.amqp_setup as amqp_setup  # Import RabbitMQ setup
+import rabbitmq.amqp_setup as amqp_setup  # Assuming you have this setup file
 
-# Define category dictionary
+# Define category dictionaries
 categories = {
     "Makeup": ["Makeup", "Soft Glam", "Full Glam", "Natural Look", "Foundation", "Concealer"],
     "Hair": ["Hair", "Hairstyle", "Hairstyles", "Updo", "Haircut", "Sleek Bun"],
@@ -28,6 +28,18 @@ categories = {
     "Comedy": ["Comedy", "Funny", "Relatable", "Meme", "Humor", "Parody", "Joke"],
     "Study Tips": ["Education", "Study", "Study Tips", "Learning Hacks", "Exam Prep", "Educational Content"]
 }
+
+# New dictionary for Scenario 2 categories
+scenario2_categories = {
+    "Travel": [
+        "Shopping", "Food", "Landmarks", "Photo Worthy", "Hotel", 
+        "Music Bank", "Itinerary", "Instagrammable"
+    ]
+}
+
+# Define the different queues to consume from
+VIDEO_PROCESSING_QUEUE = "video_processing_queue"
+SCENARIO_2_VIDEO_PROCESSING_QUEUE = "scenario_2_video_processing_queue"
 
 def process_video(video_path):
     """
@@ -75,36 +87,88 @@ def process_video(video_path):
 
     return assigned_categories
 
+def scenario2_process_video(video_path):
+    """
+    Process the video for scenario 2 (looking for specific categories like "Shopping", "Food", etc.).
+    """
+    vidcap = cv2.VideoCapture(video_path)
+    
+    # Read the first frame
+    success, image = vidcap.read()
+
+    # Store detected categories
+    detected_categories = set()
+
+    while success:
+        # Convert to grayscale
+        gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        _, thresh_frame = cv2.threshold(gray_frame, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # Use OCR (Tesseract) to extract text from the frame
+        extracted_text = pytesseract.image_to_string(gray_frame)
+
+        # Check if extracted text contains any words from scenario2_categories
+        for category, words in scenario2_categories.items():
+            for word in words:
+                if word.lower() in extracted_text.lower():
+                    detected_categories.add(word)  # Add the matching word
+
+        # Read the next frame
+        success, image = vidcap.read()
+
+    # Release the video capture object when done
+    vidcap.release()
+
+    # Assign category (if multiple categories are found, return all)
+    assigned_categories = ",".join(detected_categories) if detected_categories else "Uncategorized"
+
+    # Create the JSON object with video path (later this will be URL)
+    result = {"video_id": video_path, "album_id": album_id, "categories": assigned_categories, "email_id": input_person_email}
+
+    # Print the JSON output (later this will be sent via AMQP)
+    print("Extracted Text:", extracted_text)
+    print(json.dumps(result, indent=4))
+
 def callback(ch, method, properties, body):
     """
     Callback function to process messages from the RabbitMQ queue.
     """
     message = json.loads(body)
     video_id = message.get("video_id")
-    email = message.get("email")  # Get email from the incoming message
+    album_id = message.get("album_id")
+    input_person_email = message.get("input_person_email")
 
-    if video_id and email:
-        print(f"Received video ID: {video_id} for email: {email}")
-        video_path = video_id  # For testing purposes
-        detected_categories = process_video(video_path)
+    if video_id:
+        print(f"Received video ID: {video_id}")
+        if method.routing_key == VIDEO_PROCESSING_QUEUE:
+            video_path = video_id  # For testing purposes
+            detected_categories = process_video(video_path)
 
-        # Prepare result to send to CatB
-        processed_result = {
-            "video": video_id,
-            "categories": detected_categories,
-            "email": email  # Include email for CatB to use
-        }
+            # Prepare result for video processing
+            processed_result = {
+                "video_id": video_id,
+                "categories": detected_categories
+            }
 
-        print("Publishing message to RabbitMQ with routing_key='video.processed'")
-        amqp_setup.channel.basic_publish(
-            exchange=amqp_setup.exchange_name,
-            routing_key="video.processed",
-            body=json.dumps(processed_result),
-            properties=pika.BasicProperties(delivery_mode=2)
-        )
-    else:
-        print("Missing video_id or email in incoming message:", message)
-
+            # Publish result to RabbitMQ (or handle as needed)
+            print("Publishing message to RabbitMQ with routing_key='video.processed'")
+            amqp_setup.channel.basic_publish(
+                exchange=amqp_setup.exchange_name,
+                routing_key="video.processed",
+                body=json.dumps(processed_result),
+                properties=pika.BasicProperties(delivery_mode=2)  # Persistent message
+            )
+        elif method.routing_key == SCENARIO_2_VIDEO_PROCESSING_QUEUE:
+            # Scenario 2 specific processing
+            result = scenario2_process_video(video_id)
+            print("Scenario 2 processing result:", result)
+            # Publish or handle the result accordingly
+            amqp_setup.channel.basic_publish(
+                exchange=amqp_setup.exchange_name,
+                routing_key="scenario_2.processed",
+                body=json.dumps(result),
+                properties=pika.BasicProperties(delivery_mode=2)  # Persistent message
+            )
 
 def start_consuming():
     """
@@ -113,13 +177,15 @@ def start_consuming():
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     channel = connection.channel()
 
-    # Declare the queue to listen on
-    channel.queue_declare(queue='video_processing')
+    # Declare the queues to listen on
+    channel.queue_declare(queue=VIDEO_PROCESSING_QUEUE)
+    channel.queue_declare(queue=SCENARIO_2_VIDEO_PROCESSING_QUEUE)
 
-    # Start consuming messages from the queue
-    channel.basic_consume(queue='video_processing', on_message_callback=callback, auto_ack=True)
+    # Start consuming messages from both queues
+    channel.basic_consume(queue=VIDEO_PROCESSING_QUEUE, on_message_callback=callback, auto_ack=True)
+    channel.basic_consume(queue=SCENARIO_2_VIDEO_PROCESSING_QUEUE, on_message_callback=callback, auto_ack=True)
 
-    print("Waiting for messages...")
+    print("Waiting for messages from both queues...")
     channel.start_consuming()
 
 if __name__ == "__main__":
