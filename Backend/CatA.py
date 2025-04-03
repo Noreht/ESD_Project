@@ -5,25 +5,29 @@ import json
 
 app = Flask(__name__)
 
-# === OutSystems API Setup ===
+# === OutSystems endpoint ===
 OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories"
-API_KEY = "YOUR_API_KEY_HERE"  # Replace with your actual API key
 
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": f"Bearer {API_KEY}"
 }
 
-# === RabbitMQ Setup ===
+# === RabbitMQ setup ===
 amqp_host = "localhost"
+amqp_port = 5672
 exchange_name = "video_processing_topic"
-routing_key = "video.raw"
+exchange_type = "topic"
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=amqp_host))
+# Establish connection
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host=amqp_host, port=amqp_port, heartbeat=300, blocked_connection_timeout=300)
+)
 channel = connection.channel()
-channel.exchange_declare(exchange=exchange_name, exchange_type='topic', durable=True)
 
-# === OutSystems Functions ===
+# Declare exchange
+channel.exchange_declare(exchange=exchange_name, exchange_type=exchange_type, durable=True)
+
+# === OutSystems interaction ===
 def video_exists(video_id, category, email):
     url = f"{OUTSYSTEMS_BASE_URL}/VideoExists"
     payload = {
@@ -33,6 +37,7 @@ def video_exists(video_id, category, email):
     }
 
     response = requests.post(url, json=payload, headers=HEADERS)
+
     if response.status_code == 200:
         return response.text.strip().lower() == "true"
     else:
@@ -49,31 +54,34 @@ def insert_video(video_id, category, email):
     }
 
     response = requests.post(url, json=payload, headers=HEADERS)
+
     if response.status_code == 200:
         print("Video inserted into OutSystems")
     else:
         print("Error inserting video:", response.status_code)
         print(response.text)
 
-# === Main handler ===
 def handle_video_post(video_id, email, category=""):
+    # Step 1: Check if video exists in OutSystems
     if video_exists(video_id, category, email):
         print("Video already exists in OutSystems. Skipping insert.")
-    else:
-        print("Sending video to Video Processor...")
-        message = {
-            "video_id": video_id,
-            "email": email
-        }
-        channel.basic_publish(
-            exchange=exchange_name,
-            routing_key=routing_key,
-            body=json.dumps(message),
-            properties=pika.BasicProperties(delivery_mode=2)
-        )
-        print("Message sent to RabbitMQ")
+        return
 
-# === Route ===
+    # Step 2: Publish to RabbitMQ to be processed
+    message = {
+        "video_id": video_id,
+        "email": email
+    }
+
+    channel.basic_publish(
+        exchange=exchange_name,
+        routing_key="video.to_process",
+        body=json.dumps(message),
+        properties=pika.BasicProperties(delivery_mode=2)
+    )
+    print("Sent video to video processor via RabbitMQ")
+
+# === Route to handle POST from gateway ===
 @app.route('/post_video', methods=['POST'])
 def post_video():
     data = request.get_json()
@@ -89,9 +97,13 @@ def post_video():
             "data_received": data
         }), 400
 
-    handle_video_post(video_id, email, category)
-    return jsonify({"message": "Video forwarded to processor"}), 200
+    try:
+        handle_video_post(video_id, email, category)
+        return jsonify({"message": "Video processed"}), 200
+    except Exception as e:
+        print("Error in handle_video_post:", str(e))
+        return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
 
-# === Run app ===
+# === Start Flask App ===
 if __name__ == "__main__":
     app.run(host='localhost', port=5001, debug=True)
