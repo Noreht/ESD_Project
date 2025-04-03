@@ -36,27 +36,32 @@ def insert_into_outsystems(video_id, category, email):
         "Content-Type": "application/json"
     }
 
+    print(f"[CatB] Sending to OutSystems → {json.dumps(payload)}")
+
     try:
         response = requests.post(url, json=payload, headers=headers)
+        print(f"[CatB] OutSystems responded with status {response.status_code}")
+        print("Response body:", response.text)
+
         if response.status_code == 200:
-            print(f"Inserted: {video_id} → {category} for {email}")
+            print(f"[CatB] Inserted: {video_id} → {category} for {email}")
         else:
-            print(f"Failed to insert. Status: {response.status_code}")
-            print("Response:", response.text)
+            print(f"[CatB] Failed to insert. Status: {response.status_code}")
+
     except Exception as e:
-        print("Error calling OutSystems:", str(e))
+        print("[CatB] Error calling OutSystems:", str(e))
 
 # === Callback for processing messages ===
 def callback(ch, method, properties, body):
     try:
-        print("Received message from RabbitMQ")
+        print("[CatB] Received message from RabbitMQ:", body)
         data = json.loads(body)
         video_id = data.get("video")
         category = data.get("categories", "Uncategorized")
         email = data.get("email")
 
         if not video_id or not email:
-            print("Missing video_id or email in message:", data)
+            print("[CatB] Missing video_id or email in message:", data)
             ch.basic_nack(delivery_tag=method.delivery_tag)
             return
 
@@ -64,15 +69,15 @@ def callback(ch, method, properties, body):
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     except Exception as e:
-        print("Error processing message:", str(e))
+        print("[CatB] Error processing message:", str(e))
         ch.basic_nack(delivery_tag=method.delivery_tag)
 
 # === Start listening ===
 def start_consuming():
     channel.basic_consume(queue=queue_name, on_message_callback=callback)
-    print(f"Listening on queue '{queue_name}'...")
+    print(f"[CatB] Listening on queue '{queue_name}'...")
     channel.start_consuming()
 
 if __name__ == "__main__":
-    print("Starting CatB consumer...")
+    print("[CatB] Starting CatB consumer...")
     start_consuming()
