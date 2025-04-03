@@ -157,38 +157,27 @@
             <div v-else-if="currentTab.name === 'Categories'">
               <!-- Dynamic Category Tabs -->
               <div class="flex space-x-4 mb-4">
-                <button
-                  v-for="cat in categories"
-                  :key="cat"
-                  @click="setCategory(cat)"
-                  :class="[currentCategory === cat ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700', 'px-3 py-2 text-sm font-medium border-b-2']">
-                  {{ cat }}
-                </button>
-              </div>
-              
-              <!-- Grid of Video Cards for the Selected Category -->
-              <div class="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
-                <div
-                  v-for="video in catVideos"
-                  :key="video.Id"
-                  class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  
-                  <video controls class="w-full h-auto" :src="video.videoSrc" playsinline webkit-playsinline preload controlsList="nofullscreen">
-                    <source type="video/mp4" :poster="video.poster">
-                    Your browser does not support the video tag.
-                  </video>
-                  
-                  <div class="flex flex-1 flex-col space-y-2 p-4">
-                    <h3 class="text-sm font-medium text-gray-900">
-                      <a :href="video.videoSrc">{{ video.title }}</a>
-                    </h3>
-                    <p class="text-sm text-gray-500">{{ video.description }}</p>
-                    <div class="flex flex-1 flex-col justify-end">
-                      <p class="text-sm italic text-gray-500">{{ formatDate(video.DateTime) }}</p>
-                    </div>
+                <div v-for="cat in categories" :key="cat.name">
+                  <button
+                    @click="setCategory(cat)"
+                    :class="[
+                      currentCategory && currentCategory.name === cat.name
+                        ? 'border-indigo-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                      'px-3 py-2 text-sm font-medium border-b-2'
+                    ]">
+                    {{ cat.name }}
+
+                  </button>
+                  <div v-for="vid in cat.categorized_videos">
+                    <h1> {{ vid.VideoId }}</h1>
                   </div>
                 </div>
               </div>
+              
+              <!-- Grid of Video Cards for the Selected Category -->
+              
+              
             </div>
             <div v-else-if="currentTab.name === 'Shared Albums'">
               <p>Share videos with your friends!</p>
