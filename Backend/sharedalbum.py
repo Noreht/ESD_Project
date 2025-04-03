@@ -22,7 +22,10 @@ categories = {
 }
 
 
+from flask_cors import CORS, cross_origin  # 👈 Make sure this is imported
+
 app = Flask(__name__)
+CORS(app)  # 👈 Allow all origins (*) for all routes
 
 # TODO1: Steps 8 and 9 (Listens for Fire n Forget from Categories, Reads from Supabase & Sends AMQP to Notifications)
 import pika
@@ -37,9 +40,11 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_KEY")
 TABLE_NAME = "sharedalbum"
 
 # RabbitMQ Configuration (Get from Environment)
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")  # Default to localhost if not set
+RABBITMQ_HOST = os.getenv(
+    "RABBITMQ_HOST", "localhost"
+)  # Default to localhost if not set
 port = int(os.getenv("RABBITMQ_PORT", 5672))
-username = os.getenv("RABBITMQ_USER", "myuser") #! (this may be 'guest')
+username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')
 password = os.getenv("RABBITMQ_PASS", "mypassword")
 
 CATEGORIES_TO_SHAREDALBUM_QUEUE = "categories_to_sharedalbum_queue"
@@ -55,7 +60,7 @@ def process_message(channel, method, properties, body):
 
         message = json.loads(body)
         album_id = (
-            "korea trip"  #! Hardcoded to be 'korea trip', else: message.get("album_id")
+            "Korea Trip"  #! Hardcoded to be 'korea trip', else: message.get("album_id")
         )
         subcategory_list_album = message.get(
             "subcategory_list_album"
@@ -143,8 +148,10 @@ def start_consumer():
 
 # TODO2: Returns msg to UI "Wait User!" upon a POST request to Shared Album microservice ✅
 @app.route("/shared-album/add", methods=["POST"])
+@cross_origin()  # 👈 Add this decorator
 def add_video_to_shared_album():
     data = request.get_json()  # Get the JSON from the UI
+    print(data)
     if not data:
         return jsonify({"error": "No JSON received"}), 400
 
@@ -155,52 +162,68 @@ def add_video_to_shared_album():
         "input_person_email"
     )  #! Prolly need input field / hardcoded on UI layer
 
+    # JSON Fields Debugging
+    required_fields = ["video_id", "album_id", "input_person_email"]
+    if not all(field in data for field in required_fields):
+        print("Missing required fields")
+        return jsonify({"error": "Missing required fields"}), 400
+
     # Fetch album details from Supabase ({album_id, album_name, subscriber_list})
-    endpoint = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
 
-    headers = {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
-    }
-    response = requests.get(
-        endpoint, headers=headers, params={"album_id": f"eq.{album_id}"}
-    )
+    try:
+        endpoint = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
 
-    if response.status_code != 200:
-        print(f"Failed to fetch album {album_id} from Supabase")
-        return
+        headers = {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+        }
+        response = requests.get(
+            endpoint, headers=headers, params={"album_id": f"eq.{album_id}"}
+        )
 
-    album_data = response.json()
+        if response.status_code != 200:
+            print(f"Failed to fetch album {album_id} from Supabase")
+            return
 
-    if not album_data:
-        print(f"Album {album_id} not found in Supabase")
-        return
+        album_data = response.json()
 
-    album = album_data[0]  #! Returns 1st column
+        if not album_data:
+            print(f"Album {album_id} not found in Supabase")
+            return
 
-    subscriber_list_bad = album.get("subscriber_list")[0]
-    new_subscriber_list = subscriber_list_bad.split(",")
+        album = album_data[0]  #! Returns 1st column
 
-    # TODO3: Send AQMP to Event Broker (Scenario 2) - Step 3
-    # {video_id, album_name, subscriber_list, category, input_email}
-    msg_to_event_broker = {
-        "video_id": video_id,
-        "album_id": album_id,
-        "subscriber_list": new_subscriber_list,  # Gotten from Supabase
-        "input_person": input_person_email,
-    }
+        subscriber_list_bad = album.get("subscriber_list")[0]
+        new_subscriber_list = subscriber_list_bad.split(",")
 
-    publish_to_event_broker(msg_to_event_broker)
+        # TODO3: Send AQMP to Event Broker (Scenario 2) - Step 3
+        # {video_id, album_name, subscriber_list, category, input_email}
+        msg_to_event_broker = {
+            "video_id": video_id,
+            "album_id": album_id,
+            "subscriber_list": new_subscriber_list,  # Gotten from Supabase
+            "input_person": input_person_email,
+        }
 
-    # Respond to UI after sending message to Event Broker
-    return (
-        jsonify(
-            {
-                "message": f"Ok, my love 💋! Please patiently wait for autocategorisation within {album_id}"
-            }
-        ),
-        200,
-    )
+        try:
+            publish_to_event_broker(msg_to_event_broker)
+
+        except Exception as e:
+            print(f"Failed to publish to event broker: {str(e)}")
+            return jsonify({"error": "Event broker communication failed"}), 500
+
+        return (
+            jsonify(
+                {
+                    "message": f"Ok, my love 💋! Please patiently wait for autocategorisation within {album_id}"
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # Run the gawddamn app
@@ -210,5 +233,3 @@ if __name__ == "__main__":
     consumer_thread.start()
 
     app.run(debug=True, port=5100)
-
-

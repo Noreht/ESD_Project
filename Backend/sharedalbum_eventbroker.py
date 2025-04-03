@@ -31,5 +31,7 @@ def publish_to_event_broker(payload: dict):
         properties=pika.BasicProperties(delivery_mode=2),  # Persistent message
     )
 
-    print("\n[Event Broker] User added new video to shared_album! (Step 3)\n")
+    print(
+        "\n[SharedAlbum_EventBroker.py] User added new video to shared_album! (Step 3)\n"
+    )
     connection.close()
