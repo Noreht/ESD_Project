@@ -7,8 +7,10 @@ import twilio.rest
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from twilio.rest import Client
+from dotenv import load_dotenv
 import json
 
+load_dotenv()
 ENV = os.environ.get("ENV", "development")
 
 #twilio
@@ -33,17 +35,19 @@ def send_sms(to, body):
     print(f"SMS sent to {to}: {body}")
 
 def send_email(to, body):
+    print("Send email activated!")
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USER
     msg['To'] = to
-    msg['Subject'] = 'You have received a notification.'
+    msg['Subject'] = body
     msg.attach(MIMEText(body, 'plain'))
-
+    print("msg", EMAIL_USER)
     try:
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
         server.login(EMAIL_USER, EMAIL_PASSWORD)
         text = msg.as_string()
+        print("Email:", text)
         server.sendmail(EMAIL_USER, to, text)
         server.quit()
         print(f"Email sent to {to}: {body}")
@@ -78,18 +82,18 @@ else:
         {
             "name": "shared_album",
             "host": "localhost",
-            "exchange": "SHARED_ALBUM_EXCHANGE",
+            "exchange": "event_broker_exchange" ,
             "exchange_type": "fanout",
-            "queue": "SHARED_ALBUM_QUEUE",
+            "queue": "notifications_queue",
             "routing_key": ""
         },
         {
-            "name": "event_broker",
+            "name": "Scenario_1_Notification",
             "host": "localhost",
-            "exchange": "EVENT_BROKER_EXCHANGE",
-            "exchange_type": "fanout",
-            "queue": "EVENT_BROKER_QUEUE",
-            "routing_key": ""
+            "exchange": "video_processing_topic",
+            "exchange_type": "topic",
+            "queue": "Scenario_1_Notification_Queue",
+            "routing_key": "video.processed"
         },
     #awaiting categories and top 5 
     ]
@@ -114,9 +118,6 @@ def setup_and_consume(config, callback):
         
         # Declare the queue.
         channel.queue_declare(queue=config["queue"], durable=True)
-        
-        # Bind the queue to the exchange.
-        # Use routing_key if provided (for direct or topic exchanges)
         routing_key = config.get("routing_key", "")
         channel.queue_bind(
             exchange=config["exchange"],
@@ -142,10 +143,19 @@ def callback(ch, method, properties, body):
     print(f"Received message from {method.exchange} on queue {method.routing_key}: {body}")
     try:
         message = json.loads(body)
-        text = message.get('text', '')
+        category_result = message.get('categories')
+        root_video = message.get("video_id")
         email = message.get('email')
-        phone = message.get('phone')
+        subscribers = message.get("subscriber_list", "")
         
+        phone = "88164892"
+        text = f"Hey! Your recently saved video, {root_video}, was saved under {category_result}. Check it out now!"
+
+        if subscribers != "":
+            subscribers.append(message.get("input_person"))
+            for subscriber in subscribers:
+                await_text = f"Hey! Your friend {message.get('input_person')} just added a new video, {root_video} to your Shared album, {message.get('album_id')}! Check it out soon!"
+                send_email(subscriber, await_text)
         if email:
             send_email(email, text)
         if phone:
