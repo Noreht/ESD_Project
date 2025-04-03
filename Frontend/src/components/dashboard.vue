@@ -169,8 +169,14 @@
                     {{ cat.name }}
 
                   </button>
-                  <div v-for="vid in cat.categorized_videos">
-                    <h1> {{ vid.VideoId }}</h1>
+                  
+                  <div  v-for="vid in cat.categorized_videos" >
+                    <h1>{{ vid.VideoId }}</h1>
+                    <video controls :src="`../src/assets/videos/${vid.VideoId}`" playsinline webkit-playsinline  preload controlsList="nofullscreen">
+                      <!--<source type="video/mp4"  >--> 
+                    </video>
+                    
+                    <a  :href="`../src/assets/videos/${vid.VideoId}`" > </a>   
                   </div>
                 </div>
               </div>
@@ -200,6 +206,7 @@ import axios from 'axios';
 const userId = ref('');
 const top5Categories = ref([]);
 const lastWeekCategories = ref([]);
+const videoModules = import.meta.glob('../assets/videos/*.mp4')
 
 
 const props = defineProps({
@@ -224,7 +231,7 @@ onMounted(async () => {
 
     userId.value = data.UserId;
     top5Categories.value = data.top_5_categories.split(","); 
-    lastWeekCategories.value = data.last_week_categoriess.split(",");
+    lastWeekCategories.value = data.last_week_categories.split(",");
 
     //console.log(data);
   } catch (error) {
@@ -346,7 +353,7 @@ function setTab(item) {
 
 //save videos
 
-const videoModules = import.meta.glob('../assets/videos/*.mp4')
+
 
 const videos = ref([])
 
