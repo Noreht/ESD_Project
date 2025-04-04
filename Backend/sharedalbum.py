@@ -47,83 +47,86 @@ port = int(os.getenv("RABBITMQ_PORT", 5672))
 username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')
 password = os.getenv("RABBITMQ_PASS", "mypassword")
 
-CATEGORIES_TO_SHAREDALBUM_QUEUE = "categories_to_sharedalbum_queue"
-NOTIFICATIONS_QUEUE = "notifications_queue"
-
 
 #! Step 8 (Fire and Forget)
 def process_message(channel, method, properties, body):
     print(f"\nReceived message from Categories (Step 8): {body}\n")
 
-    try:
-        # Parse incoming message from Categories (Fire and Forget)
+    # try:
+    #     # Parse incoming message from Categories (Fire and Forget)
 
-        message = json.loads(body)
-        album_id = (
-            "Korea Trip"  #! Hardcoded to be 'korea trip', else: message.get("album_id")
-        )
-        subcategory_list_album = message.get(
-            "subcategory_list_album"
-        )  #! Name may differ
-        new_vid_id = message.get("new_vid_id")  #! New Video added
+    #     message = json.loads(body)
+    #     album_id = (
+    #         "Korea Trip"  #! Hardcoded to be 'korea trip', else: message.get("album_id")
+    #     )
+    #     subcategory_list_album = message.get(
+    #         "subcategory_list_album"
+    #     )  #! Name may differ
+    #     new_vid_id = message.get("new_vid_id")  #! New Video added
 
-        new_vid_category = message.get("new_vid_category")
+    #     new_vid_category = message.get("new_vid_category")
 
-        if not album_id or not new_vid_id:
-            print("Invalid message: Missing album_id or new_vid_id")
-            return
+    #     if not album_id or not new_vid_id:
+    #         print("Invalid message: Missing album_id or new_vid_id")
+    #         return
 
-        # Fetch album details from Supabase ({album_id, album_name, subscriber_list})
-        endpoint = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
-        headers = {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
-        }
-        response = requests.get(
-            endpoint, headers=headers, params={"album_id": f"eq.{album_id}"}
-        )
+    #     # Fetch album details from Supabase ({album_id, album_name, subscriber_list})
+    #     endpoint = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
+    #     headers = {
+    #         "apikey": SUPABASE_ANON_KEY,
+    #         "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+    #     }
+    #     response = requests.get(
+    #         endpoint, headers=headers, params={"album_id": f"eq.{album_id}"}
+    #     )
 
-        if response.status_code != 200:
-            print(f"Failed to fetch album {album_id} from Supabase")
-            return
+    #     if response.status_code != 200:
+    #         print(f"Failed to fetch album {album_id} from Supabase")
+    #         return
 
-        album_data = response.json()
+    #     album_data = response.json()
 
-        if not album_data:
-            print(f"Album {album_id} not found in Supabase")
-            return
+    #     if not album_data:
+    #         print(f"Album {album_id} not found in Supabase")
+    #         return
 
-        album = album_data[0]  #! Returns 1st column
+    #     album = album_data[0]  #! Returns 1st column
 
-        subscriber_list_bad = album.get("subscriber_list")[0]
-        new_subscriber_list = subscriber_list_bad.split(",")
+    #     subscriber_list_bad = album.get("subscriber_list")[0]
+    #     new_subscriber_list = subscriber_list_bad.split(",")
 
-        # Construct message for Notifications
-        notification_message = {
-            "vid_id": new_vid_id,
-            "new_vid_subcategory": new_vid_category,
-            "shared_album_name": album.get(
-                "album_name"
-            ),  # from Supabase -> 'korea trip' duh
-            "subcategory_list_of_album": subcategory_list_album,  #! From Categories (May need handling to put in a Python List) [from Outsystems DB]
-            "subscriber_list": new_subscriber_list,  # Text Arr (Supabase dtype -> Python List)
-        }
-        SHARED_ALBUM_QUEUE = "shared_album_queue"  # listen to shared_album
-        SHARED_ALBUM_EXCHANGE = "shared_album_exchange"  # sent by shared_album (step 9)
+    #     # Construct message for Notifications
+    #     notification_message = {
+    #         "vid_id": new_vid_id,
+    #         "new_vid_subcategory": new_vid_category,
+    #         "shared_album_name": album.get(
+    #             "album_name"
+    #         ),  # from Supabase -> 'korea trip' duh
+    #         "subcategory_list_of_album": subcategory_list_album,  #! From Categories (May need handling to put in a Python List) [from Outsystems DB]
+    #         "subscriber_list": new_subscriber_list,  # Text Arr (Supabase dtype -> Python List)
+    #     }
+    #     SHARED_ALBUM_QUEUE = "shared_album_queue"  # listen to shared_album
+    #     SHARED_ALBUM_EXCHANGE = "shared_album_exchange"  # sent by shared_album (step 9)
 
-        # Send to Notifications queue
-        channel.basic_publish(
-            exchange=SHARED_ALBUM_EXCHANGE,
-            routing_key=SHARED_ALBUM_QUEUE,
-            body=json.dumps(notification_message),
-            properties=pika.BasicProperties(delivery_mode=2),  # Persistent
-        )
+    #     # Send to Notifications queue
+    #     channel.basic_publish(
+    #         exchange=SHARED_ALBUM_EXCHANGE,
+    #         routing_key=SHARED_ALBUM_QUEUE,
+    #         body=json.dumps(notification_message),
+    #         properties=pika.BasicProperties(delivery_mode=2),  # Persistent
+    #     )
 
-        print("Message sent to Notifications [Completed]\n")
-        print(f"Message Content:{notification_message}\n")
+    #     print("Message sent to Notifications [Completed]\n")
+    #     print(f"Message Content:{notification_message}\n")
 
-    except Exception as e:
-        print(f"Error processing message: {str(e)}")
+    # except Exception as e:
+    #     print(f"Error processing message: {str(e)}")
+
+
+CATEGORIES_TO_SHAREDALBUM_QUEUE = "categories_to_sharedalbum_queue"
+exchange_name = "categories_to_sharedalbum_topic"
+queue_name = "categories_to_sharedalbum_queue"
+routing_key = "cat_firenforget"
 
 
 #! RabbitMQ
@@ -132,16 +135,26 @@ def start_consumer():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
     channel = connection.channel()
 
+    # Declare exchange
+    channel.exchange_declare(
+        exchange=exchange_name, exchange_type="topic", durable=True
+    )
+
     # Declare queues
     channel.queue_declare(queue=CATEGORIES_TO_SHAREDALBUM_QUEUE, durable=True)
-    channel.queue_declare(queue=NOTIFICATIONS_QUEUE, durable=True)
 
-    # Start consuming
-    channel.basic_consume(
-        queue=CATEGORIES_TO_SHAREDALBUM_QUEUE,
-        on_message_callback=process_message,
-        auto_ack=True,
+    # Bind queue to the exchange with the same routing key
+    channel.queue_bind(
+        exchange=exchange_name, queue=queue_name, routing_key=routing_key
     )
+
+    # Start consuming with your handler for Step 9
+    channel.basic_consume(
+        queue=queue_name,
+        on_message_callback=process_message,
+        auto_ack=True
+    )
+    
     print("Waiting for messages from Categories...")
     channel.start_consuming()
 
