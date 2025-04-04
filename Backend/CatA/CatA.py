@@ -15,7 +15,7 @@ HEADERS = {
 }
 
 # === RabbitMQ setup ===
-amqp_host = "localhost"
+amqp_host = "rabbitmq"
 amqp_port = 5672
 exchange_name = "video_processing_topic"
 exchange_type = "topic"
@@ -31,7 +31,7 @@ channel.exchange_declare(exchange=exchange_name, exchange_type=exchange_type, du
 
 # === OutSystems interaction ===
 def video_exists(video_id, category, email):
-    url = f"http://localhost:3000/CheckExists"
+    url = f"http://gateway:3000/CheckExists"
     payload = {
         "VideoId": video_id,
         "category": category,
@@ -110,4 +110,4 @@ def post_video():
 
 # === Start Flask App ===
 if __name__ == "__main__":
-    app.run(host='localhost', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

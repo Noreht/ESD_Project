@@ -3,7 +3,7 @@ import pika
 import requests
 
 # === RabbitMQ setup ===
-amqp_host = "localhost"
+amqp_host ="rabbitmq"
 amqp_port = 5672
 exchange_name = "video_processing_topic"
 exchange_type = "topic"
@@ -25,7 +25,7 @@ channel.queue_bind(exchange=exchange_name, queue=queue_name, routing_key=routing
 OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories"
 
 def insert_into_outsystems(video_id, category, email):
-    url = f"http://localhost:3000/InsertProcessedVideo"
+    url = f"http://gateway:3000/InsertProcessedVideo"
     payload = {
         "VideoId": video_id,
         "category": category,

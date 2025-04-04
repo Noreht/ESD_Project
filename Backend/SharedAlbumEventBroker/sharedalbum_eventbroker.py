@@ -3,7 +3,7 @@ import pika
 import json, os
 
 
-AMQP_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+AMQP_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 EVENT_BROKER_EXCHANGE = "event_broker_exchange"  # event_broker (step 3)
 
 # msg_to_event_broker = {

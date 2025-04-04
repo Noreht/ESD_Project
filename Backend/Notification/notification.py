@@ -78,7 +78,7 @@ else:
     RABBITMQ_CONFIGS = [
         {
             "name": "shared_album",
-            "host": "localhost",
+            "host": "rabbitmq",
             "exchange": "event_broker_exchange",
             "exchange_type": "fanout",
             "queue": "notifications_queue",
@@ -86,7 +86,7 @@ else:
         },
         {
             "name": "Scenario_1_Notification",
-            "host": "localhost",
+            "host": "rabbitmq",
             "exchange": "video_processing_topic",
             "exchange_type": "topic",
             "queue": "Scenario_1_Notification_Queue",
@@ -96,7 +96,7 @@ else:
         #! Notifications 中间 of categories fire n forget to shared_album
         {
             "name": "Scenario2_Categories_To_SharedAlbum",
-            "host": "localhost",
+            "host": "rabbitmq",
             "exchange": "categories_to_sharedalbum_topic",
             "exchange_type": "topic",
             "queue": "categories_to_notifications_queue",

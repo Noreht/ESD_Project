@@ -7,7 +7,7 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-GATEWAY_URL= "http://localhost:3000"
+GATEWAY_URL= "http://gateway:3000"
 # will be deleted after gateway connection
 CATEGORIES_SERVICE_URL = "http://categories-service:5001"
 LAST_TOP_5_SERVICE_URL = "http://last-top-5-service:5002"

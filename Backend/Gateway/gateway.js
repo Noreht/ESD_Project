@@ -12,7 +12,7 @@ const NODE_ENV = "development"; //process.env.NODE_ENV ||
 const CAT_A_SERVICE_URL =
   //NODE_ENV === 'production'
   //? process.env.CAT_A_SERVICE_URL:  // place render url here
-  "http://localhost:5001";
+  "http://catA:5001";
 
 // app.post('/categorisation', async (req, res) => {
 //     console.log("Received request at /categorisation:", req.body);
@@ -94,7 +94,7 @@ app.post("/RetrieveAllAlbums", async (req, res) => {
 const SHARED_ALBUM_URL =
   //NODE_ENV === 'production'
   //? process.env.CAT_A_SERVICE_URL:  // place render url here
-  "http://localhost:5100";
+  "http://catA:5100";
 
 app.post("/saveSharedAlbum", async (req, res) => {
   console.log("Received request at Saved Shared Album Button", req.body);
@@ -156,7 +156,7 @@ app.post("/GetPastWeek", async (req, res) => {
 // End of GetPastWeek
 
 //start of Find Top 5
-const FIND_TOP_5_URL = "http://localhost:5300";
+const FIND_TOP_5_URL = "http://findtop5:5300";
 
 app.get("/LoadDashboard", async (req, res) => {
   const email = req.query.email;

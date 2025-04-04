@@ -41,7 +41,7 @@ TABLE_NAME = "sharedalbum"
 
 # RabbitMQ Configuration (Get from Environment)
 RABBITMQ_HOST = os.getenv(
-    "RABBITMQ_HOST", "localhost"
+    "RABBITMQ_HOST","rabbitmq"
 )  # Default to localhost if not set
 port = int(os.getenv("RABBITMQ_PORT", 5672))
 username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')

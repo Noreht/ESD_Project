@@ -337,7 +337,7 @@ def start_consuming():
     """
     Start the RabbitMQ consumer to listen for incoming messages.
     """
-    connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+    connection = pika.BlockingConnection(pika.ConnectionParameters("rabbitmq"))
     channel = connection.channel()
 
     # Declare the queues to listen on
