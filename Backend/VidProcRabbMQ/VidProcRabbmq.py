@@ -4,6 +4,9 @@ import json
 import os
 import pika
 import rabbitmq.amqp_setup as amqp_setup  # Assuming you have this setup file
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # Define category dictionaries
 categories = {
@@ -337,9 +340,12 @@ def start_consuming():
     """
     Start the RabbitMQ consumer to listen for incoming messages.
     """
-    connection = pika.BlockingConnection(pika.ConnectionParameters("rabbitmq"))
+    RABBITMQ_USER = os.getenv("RABBITMQ_USER", "myuser")
+    RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "mypassword")
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+    parameters = pika.ConnectionParameters(host="rabbitmq", credentials=credentials)
+    connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
-
     # Declare the queues to listen on
     channel.queue_declare(queue=VIDEO_PROCESSING_QUEUE)
     channel.queue_declare(queue=SCENARIO_2_VIDEO_PROCESSING_QUEUE)

@@ -11,8 +11,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
+# In Dockerfile for videoprocrabbmq
 WORKDIR /app
+COPY . /app
 
+COPY ./rabbitmq /app/rabbitmq
+ENV PYTHONPATH=/app
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

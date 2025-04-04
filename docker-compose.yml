@@ -1,3 +1,102 @@
+# services:
+#   rabbitmq:
+#     image: rabbitmq:3-management
+#     container_name: rabbitmq
+#     ports:
+#       - "5672:5672"
+#       - "15672:15672"
+#     environment:
+#       RABBITMQ_DEFAULT_USER: myuser
+#       RABBITMQ_DEFAULT_PASS: mypassword
+
+#   gateway:
+#     build: ./backend/gateway
+#     container_name: gateway
+#     command: node gateway.js
+#     ports:
+#       - "3000:3000"
+#     depends_on:
+#       - rabbitmq
+#       - cata
+#       - findtop5
+#       - sharedalbum
+
+#   cata:
+#     build: ./backend/cata
+#     container_name: cata
+#     command: python cata.py
+#     ports:
+#       - "5001:5001"
+#     depends_on:
+#       - rabbitmq
+#     environment:
+#       - RABBITMQ_HOST=rabbitmq
+
+#   catb:
+#     build: ./backend/catb
+#     container_name: catb
+#     command: python catb.py
+#     depends_on:
+#       - rabbitmq
+#     environment:
+#       - RABBITMQ_HOST=rabbitmq
+
+#   findtop5:
+#     build: ./backend/findtop5
+#     container_name: findtop5
+#     command: python findtop5.py
+#     ports:
+#       - "5300:5300"
+#     environment:
+#       - RABBITMQ_HOST=rabbitmq
+
+#   notification:
+#     build: ./backend/notification
+#     container_name: notification
+#     command: python notification.py
+#     depends_on:
+#       - rabbitmq
+#     environment:
+#       - RABBITMQ_HOST=rabbitmq
+
+#   sharedalbum:
+#     build: ./backend/sharedalbum
+#     container_name: sharedalbum
+#     command: python sharedalbum.py
+#     ports:
+#       - "5100:5100"
+#     depends_on:
+#       - rabbitmq
+#     environment:
+#       - RABBITMQ_HOST=rabbitmq
+
+#   sharedalbum_eventbroker:
+#     build: ./backend/sharedalbumeventbroker
+#     container_name: sharedalbumeventbroker
+#     command: python sharedalbum_eventbroker.py
+#     depends_on:
+#       - rabbitmq
+#     environment:
+#       - RABBITMQ_HOST=rabbitmq
+
+#   videoproc:
+#     build: ./backend/vidprocrabbmq
+#     container_name: videoprocrabbmq
+#     command: python vidprocrabbmq.py
+#     depends_on:
+#       - rabbitmq
+#     environment:
+#       - RABBITMQ_HOST=rabbitmq
+
+#   frontend:
+#     build: ./frontend
+#     container_name: vue_frontend
+#     ports:
+#       - "8080:80"
+#     depends_on:
+#       - gateway
+
+
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -8,6 +107,12 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: myuser
       RABBITMQ_DEFAULT_PASS: mypassword
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   gateway:
     build: ./backend/gateway
@@ -16,10 +121,14 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - rabbitmq
-      - cata
-      - findtop5
-      - sharedalbum
+      rabbitmq:
+        condition: service_healthy
+      cata:
+        condition: service_started
+      findtop5:
+        condition: service_started
+      sharedalbum:
+        condition: service_started
 
   cata:
     build: ./backend/cata
@@ -28,7 +137,8 @@ services:
     ports:
       - "5001:5001"
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
 
@@ -37,7 +147,8 @@ services:
     container_name: catb
     command: python catb.py
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
 
@@ -47,6 +158,9 @@ services:
     command: python findtop5.py
     ports:
       - "5300:5300"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
 
@@ -55,7 +169,8 @@ services:
     container_name: notification
     command: python notification.py
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
 
@@ -66,7 +181,8 @@ services:
     ports:
       - "5100:5100"
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
 
@@ -75,7 +191,8 @@ services:
     container_name: sharedalbumeventbroker
     command: python sharedalbum_eventbroker.py
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
 
@@ -84,7 +201,8 @@ services:
     container_name: videoprocrabbmq
     command: python vidprocrabbmq.py
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
 
@@ -94,4 +212,5 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - gateway
+      gateway:
+        condition: service_started

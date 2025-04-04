@@ -4,9 +4,13 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH="${PYTHONPATH}:/app"
 
 # Set working directory
+# In Dockerfile for videoprocrabbmq
 WORKDIR /app
+COPY . /app
+
 
 # Install dependencies
 COPY requirements.txt .

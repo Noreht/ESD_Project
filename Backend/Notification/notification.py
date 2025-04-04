@@ -56,7 +56,7 @@ if ENV == "production":
     RABBITMQ_CONFIGS = [
         {
             "name": "shared_album",
-            "host": "",  # INSERT ADDRESS HERE
+            "host": "rabbitmq",  # INSERT ADDRESS HERE
             "exchange": "SHARED_ALBUM_EXCHANGE",
             "exchange_type": "fanout",  # place exchange type here
             "queue": "SHARED_ALBUM_QUEUE",
@@ -65,7 +65,7 @@ if ENV == "production":
         },
         {
             "name": "event_broker",
-            "host": "",  # INSERT ADDRESS HERE
+            "host": "rabbitmq",  # INSERT ADDRESS HERE
             "exchange": "EVENT_BROKER_EXCHANGE",
             "exchange_type": "fanout",
             "queue": "EVENT_BROKER_QUEUE",
@@ -111,9 +111,12 @@ def setup_and_consume(config, callback):
     Sets up the connection, channel, exchanges, queues, and starts consuming messages.
     """
     try:
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=config["host"])
-        )
+        RABBITMQ_USER = os.getenv("RABBITMQ_USER", "myuser")
+        RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "mypassword")
+
+        credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+        parameters = pika.ConnectionParameters(host="rabbitmq", credentials=credentials)
+        connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
         # Declare the exchange using the configured exchange type.

@@ -55,7 +55,12 @@ def callback(ch, method, properties, body):
 def start_listening():
     while True:
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters(host=AMQP_HOST))
+            RABBITMQ_USER = os.getenv("RABBITMQ_USER", "myuser")
+            RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "mypassword")
+
+            credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+            parameters = pika.ConnectionParameters(host="rabbitmq", credentials=credentials)
+            connection = pika.BlockingConnection(parameters)
             channel = connection.channel()
 
             # Declare exchange and queue

@@ -1,8 +1,11 @@
 from flask import Flask, jsonify, request
 import requests
 from dotenv import load_dotenv
-import os, pika, json, threading
-from SharedAlbumEventBroker.sharedalbum_eventbroker import (
+import os,sys, pika, json, threading
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from rabbitmq.sharedalbum_eventbroker import (
     publish_to_event_broker,
 )  # 👈 import your broker logic
 
@@ -132,8 +135,15 @@ routing_key = "cat_firenforget"
 #! RabbitMQ
 def start_consumer():
     # Connect to RabbitMQ
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
+   
+    RABBITMQ_USER = os.getenv("RABBITMQ_USER", "myuser")
+    RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "mypassword")
+
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+    parameters = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
+    connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
+   
 
     # Declare exchange
     channel.exchange_declare(

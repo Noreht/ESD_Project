@@ -3,6 +3,10 @@ import requests
 import pika
 import json
 from flask_cors import CORS
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 app = Flask(__name__)
 CORS(app)
@@ -21,9 +25,20 @@ exchange_name = "video_processing_topic"
 exchange_type = "topic"
 
 # Establish connection
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host=amqp_host, port=amqp_port, heartbeat=300, blocked_connection_timeout=300)
+# connection = pika.BlockingConnection(
+#     pika.ConnectionParameters(host=amqp_host, port=amqp_port, heartbeat=300, blocked_connection_timeout=300)
+# )
+
+
+credentials = pika.PlainCredentials("myuser", "mypassword")  # Update with actual values
+parameters = pika.ConnectionParameters(
+    host="rabbitmq",  # or "localhost" if not using Docker
+    port=5672,
+    credentials=credentials
 )
+
+connection = pika.BlockingConnection(parameters)
+
 channel = connection.channel()
 
 # Declare exchange
