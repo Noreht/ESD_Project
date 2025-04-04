@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 import requests
 from dotenv import load_dotenv
 import os, pika, json, threading
-from sharedalbum_eventbroker import (
+from SharedAlbumEventBroker.sharedalbum_eventbroker import (
     publish_to_event_broker,
 )  # 👈 import your broker logic
 
