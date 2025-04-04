@@ -5,10 +5,7 @@ import os,sys, pika, json, threading
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from rabbitmq.sharedalbum_eventbroker import (
-    publish_to_event_broker,
-)  # 👈 import your broker logic
-
+from sharedalbumeventbroker.sharedalbum_eventbroker import publish_to_event_broker
 
 # Define shared_album dictionary
 categories = {
