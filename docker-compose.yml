@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: myuser
+      RABBITMQ_DEFAULT_PASS: mypassword
+
+  gateway:
+    build: ./Backend/Gateway
+    container_name: gateway
+    command: node gateway.js
+    ports:
+      - "3000:3000"
+    depends_on:
+      - rabbitmq
+      - catA
+      - findtop5
+      - sharedalbum
+
+  catA:
+    build: ./Backend/CatA
+    container_name: catA
+    command: python CatA.py
+    ports:
+      - "5001:5001"
+    depends_on:
+      - rabbitmq
+
+  catB:
+    build: ./Backend/CatB
+    container_name: catB
+    command: python CatB.py
+    depends_on:
+      - rabbitmq
+
+  findtop5:
+    build: ./Backend/FindTop5
+    container_name: findtop5
+    command: python findTop5.py
+    ports:
+      - "5300:5300"
+    depends_on:
+      - gateway
+
+  notification:
+    build: ./Backend/Notification
+    container_name: notification
+    command: python notification.py
+    depends_on:
+      - rabbitmq
+
+  sharedalbum:
+    build: ./Backend/SharedAlbum
+    container_name: sharedalbum
+    command: python sharedalbum.py
+    ports:
+      - "5100:5100"
+    depends_on:
+      - rabbitmq
+
+  sharedalbum-worker:
+    build: ./Backend/SharedAlbumEvent
+    container_name: sharedalbum_worker
+    command: python sharedalbum_eventbroker.py
+    depends_on:
+      - rabbitmq
+
+  videoproc:
+    build: ./Backend/VidProcRabbmq
+    container_name: videoproc
+    command: python VidProcRabbmq.py
+    depends_on:
+      - rabbitmq
+
+  frontend:
+    build: ./Frontend
+    container_name: vue_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - gateway
