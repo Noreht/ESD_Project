@@ -14,27 +14,7 @@
 # #     }
 
 
-# def publish_to_event_broker(payload: dict):
-#     connection = pika.BlockingConnection(pika.ConnectionParameters(host=AMQP_HOST))
-#     channel = connection.channel()
 
-#     channel.exchange_declare(
-#         exchange=EVENT_BROKER_EXCHANGE, exchange_type="fanout", durable=True
-#     )
-
-#     EVENT_BROKER_QUEUE = "notifications_queue"  # listen to event_broker
-
-#     channel.basic_publish(
-#         exchange=EVENT_BROKER_EXCHANGE,
-#         routing_key=EVENT_BROKER_QUEUE,  # Fanout ignores this
-#         body=json.dumps(payload),
-#         properties=pika.BasicProperties(delivery_mode=2),  # Persistent message
-#     )
-
-#     print(
-#         "\n[SharedAlbum_EventBroker.py] User added new video to shared_album! (Step 3)\n"
-#     )
-#     connection.close()
 
 # sharedalbum_eventbroker.py
 import pika
@@ -79,6 +59,28 @@ def start_listening():
         except Exception as e:
             print(f"Unexpected error: {e}, restarting in 5 seconds...")
             time.sleep(5)
+
+def publish_to_event_broker(payload: dict):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=AMQP_HOST))
+    channel = connection.channel()
+
+    channel.exchange_declare(
+        exchange=EVENT_BROKER_EXCHANGE, exchange_type="fanout", durable=True
+    )
+
+    EVENT_BROKER_QUEUE = "notifications_queue"  # listen to event_broker
+
+    channel.basic_publish(
+        exchange=EVENT_BROKER_EXCHANGE,
+        routing_key=EVENT_BROKER_QUEUE,  # Fanout ignores this
+        body=json.dumps(payload),
+        properties=pika.BasicProperties(delivery_mode=2),  # Persistent message
+    )
+
+    print(
+        "\n[SharedAlbum_EventBroker.py] User added new video to shared_album! (Step 3)\n"
+    )
+    connection.close()
 
 if __name__ == "__main__":
     start_listening()
