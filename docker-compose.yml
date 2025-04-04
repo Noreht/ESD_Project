@@ -185,16 +185,18 @@ services:
         condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=myuser
+      - RABBITMQ_PASS=mypassword
 
-  sharedalbum_eventbroker:
-    build: ./backend/sharedalbumeventbroker
-    container_name: sharedalbumeventbroker
-    command: python sharedalbum_eventbroker.py
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - RABBITMQ_HOST=rabbitmq
+  # sharedalbum_eventbroker:
+  #   build: ./backend/sharedalbum/sharedalbumeventbroker
+  #   container_name: sharedalbumeventbroker
+  #   command: python sharedalbum_eventbroker.py
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   environment:
+  #     - RABBITMQ_HOST=rabbitmq
 
   videoproc:
     build: ./backend/vidprocrabbmq
@@ -205,6 +207,9 @@ services:
         condition: service_healthy
     environment:
       - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=myuser
+      - RABBITMQ_PASS=mypassword
+
 
   frontend:
     build: ./frontend

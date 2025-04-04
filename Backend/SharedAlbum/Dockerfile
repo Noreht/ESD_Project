@@ -4,24 +4,21 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
 
 # Set working directory
-# In Dockerfile for videoprocrabbmq
 WORKDIR /app
-COPY . /app
-COPY ./rabbitmq /app/rabbitmq
 
+# Copy only requirements first (for layer caching)
+COPY requirements.txt .
 
 # Install dependencies
-COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your app code
+# Now copy your whole app
 COPY . .
 
-# Expose the port your Flask app runs on
+# Expose the Flask port
 EXPOSE 5100
 
-# Command to run the app
+# Run the app
 CMD ["python", "sharedalbum.py"]

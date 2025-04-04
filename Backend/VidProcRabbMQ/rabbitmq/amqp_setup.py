@@ -28,18 +28,31 @@ def create_queue(channel):
     channel.queue_bind(exchange=exchange_name, queue=queue_name, routing_key=routing_key)
 
 # Establish persistent connection to RabbitMQ
+import os
+
 def init_rabbitmq():
     print(f"Connecting to RabbitMQ at {amqp_host}:{amqp_port}...")
+
+    credentials = pika.PlainCredentials(
+        os.environ.get("RABBITMQ_USER", "myuser"),
+        os.environ.get("RABBITMQ_PASS", "mypassword")
+    )
+
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=amqp_host, port=amqp_port, heartbeat=300, blocked_connection_timeout=300)
+        pika.ConnectionParameters(
+            host=amqp_host,
+            port=amqp_port,
+            credentials=credentials,
+            heartbeat=300,
+            blocked_connection_timeout=300
+        )
     )
     print("Connected to RabbitMQ")
-    
+
     channel = connection.channel()
     create_exchange(channel)
     create_queue(channel)
-    
-    return connection, channel  # Return open connection and channel
 
+    return connection, channel
 # Create a persistent connection and channel
 connection, channel = init_rabbitmq()
