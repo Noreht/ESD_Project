@@ -19,4 +19,4 @@ COPY . .
 EXPOSE 5001
 
 # Command to run your app
-CMD ["python", "catA.py"]
+CMD ["python", "cata.py"]

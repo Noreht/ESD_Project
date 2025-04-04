@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 5300
 
 # Run the Flask app
-CMD ["python", "findTop5.py"]
+CMD ["python", "findtop5.py"]

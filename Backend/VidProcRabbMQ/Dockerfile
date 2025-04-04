@@ -24,4 +24,4 @@ COPY . .
 # EXPOSE 5000
 
 # Run the main script
-CMD ["python", "VidProcRabbmq.py"]
+CMD ["python", "vidprocrabbmq.py"]
