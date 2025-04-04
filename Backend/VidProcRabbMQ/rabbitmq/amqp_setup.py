@@ -7,7 +7,7 @@ RabbitMQ Setup: Creates the exchange and queue for video processing microservice
 import pika
 
 # RabbitMQ connection settings
-amqp_host = "localhost"
+amqp_host = "rabbitmq"
 amqp_port = 5672
 
 # Standardized exchange and queue settings
