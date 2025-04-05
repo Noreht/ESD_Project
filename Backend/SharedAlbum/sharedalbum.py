@@ -1,11 +1,15 @@
 from flask import Flask, jsonify, request
 import requests
 from dotenv import load_dotenv
-import os,sys, pika, json, threading
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import os, pika, json, threading
+
+import sys
+import os
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from SharedAlbumEventBroker.sharedalbum_eventbroker import publish_to_event_broker
+
 
 # Define shared_album dictionary
 categories = {
@@ -40,9 +44,7 @@ SUPABASE_ANON_KEY = os.getenv("SUPABASE_KEY")
 TABLE_NAME = "sharedalbum"
 
 # RabbitMQ Configuration (Get from Environment)
-RABBITMQ_HOST = os.getenv(
-    "RABBITMQ_HOST","rabbitmq"
-)  # Default to localhost if not set
+aqmp_host = os.getenv("RABBITMQ_HOST", "localhost")  # Default to localhost if not set
 port = int(os.getenv("RABBITMQ_PORT", 5672))
 username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')
 password = os.getenv("RABBITMQ_PASS", "mypassword")
@@ -52,75 +54,33 @@ password = os.getenv("RABBITMQ_PASS", "mypassword")
 def process_message(channel, method, properties, body):
     print(f"\nReceived message from Categories (Step 8): {body}\n")
 
-    # try:
-    #     # Parse incoming message from Categories (Fire and Forget)
+    try:
+        # Parse the message
+        message = json.loads(body)
+        album_id = message.get("album_id", "")
 
-    #     message = json.loads(body)
-    #     album_id = (
-    #         "Korea Trip"  #! Hardcoded to be 'korea trip', else: message.get("album_id")
-    #     )
-    #     subcategory_list_album = message.get(
-    #         "subcategory_list_album"
-    #     )  #! Name may differ
-    #     new_vid_id = message.get("new_vid_id")  #! New Video added
+        if album_id:
+            print(
+                f"🟢 [SharedAlbum] Sending album_id to [Gateway-Frontend]: {album_id}"
+            )
 
-    #     new_vid_category = message.get("new_vid_category")
+            # Send album_id to frontend
+            frontend_url = "http://gateway:3000/NotifyFrontend"
+            payload = {"album_id": album_id}
+            headers = {"Content-Type": "application/json"}
 
-    #     if not album_id or not new_vid_id:
-    #         print("Invalid message: Missing album_id or new_vid_id")
-    #         return
+            try:
+                response = requests.post(frontend_url, json=payload, headers=headers)
+                print(
+                    f"🟢 [SharedAlbum] Frontend responded with status {response.status_code}"
+                )
+                print("Response body:", response.text)
 
-    #     # Fetch album details from Supabase ({album_id, album_name, subscriber_list})
-    #     endpoint = f"{SUPABASE_URL}/rest/v1/{TABLE_NAME}"
-    #     headers = {
-    #         "apikey": SUPABASE_ANON_KEY,
-    #         "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
-    #     }
-    #     response = requests.get(
-    #         endpoint, headers=headers, params={"album_id": f"eq.{album_id}"}
-    #     )
+            except Exception as e:
+                print(f"❌ [SharedAlbum] Error sending album_id to frontend: {str(e)}")
 
-    #     if response.status_code != 200:
-    #         print(f"Failed to fetch album {album_id} from Supabase")
-    #         return
-
-    #     album_data = response.json()
-
-    #     if not album_data:
-    #         print(f"Album {album_id} not found in Supabase")
-    #         return
-
-    #     album = album_data[0]  #! Returns 1st column
-
-    #     subscriber_list_bad = album.get("subscriber_list")[0]
-    #     new_subscriber_list = subscriber_list_bad.split(",")
-
-    #     # Construct message for Notifications
-    #     notification_message = {
-    #         "vid_id": new_vid_id,
-    #         "new_vid_subcategory": new_vid_category,
-    #         "shared_album_name": album.get(
-    #             "album_name"
-    #         ),  # from Supabase -> 'korea trip' duh
-    #         "subcategory_list_of_album": subcategory_list_album,  #! From Categories (May need handling to put in a Python List) [from Outsystems DB]
-    #         "subscriber_list": new_subscriber_list,  # Text Arr (Supabase dtype -> Python List)
-    #     }
-    #     SHARED_ALBUM_QUEUE = "shared_album_queue"  # listen to shared_album
-    #     SHARED_ALBUM_EXCHANGE = "shared_album_exchange"  # sent by shared_album (step 9)
-
-    #     # Send to Notifications queue
-    #     channel.basic_publish(
-    #         exchange=SHARED_ALBUM_EXCHANGE,
-    #         routing_key=SHARED_ALBUM_QUEUE,
-    #         body=json.dumps(notification_message),
-    #         properties=pika.BasicProperties(delivery_mode=2),  # Persistent
-    #     )
-
-    #     print("Message sent to Notifications [Completed]\n")
-    #     print(f"Message Content:{notification_message}\n")
-
-    # except Exception as e:
-    #     print(f"Error processing message: {str(e)}")
+    except Exception as e:
+        print(f"❌ [SharedAlbum] Error processing message from CatB: {str(e)}")
 
 
 CATEGORIES_TO_SHAREDALBUM_QUEUE = "categories_to_sharedalbum_queue"
@@ -129,49 +89,61 @@ queue_name = "categories_to_sharedalbum_queue"
 routing_key = "cat_firenforget"
 
 
-#! RabbitMQ
+#! RabbitMQ - For [CatB]
 def start_consumer():
+
+    catb_to_sharedalbum_exchange = "catb_to_sharedalbum_exchange"
+    catb_to_sharedalbum_queue = "catb_to_sharedalbum_queue"
+
     # Connect to RabbitMQ
-   
-    RABBITMQ_USER = os.getenv("RABBITMQ_USER", "myuser")
-    RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "mypassword")
+    aqmp_host = os.getenv(
+        "RABBITMQ_HOST", "localhost"
+    )  # Default to localhost if not set
+    username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')
+    password = os.getenv("RABBITMQ_PASS", "mypassword")
+    port = int(os.getenv("RABBITMQ_PORT", 5672))
 
-    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
-    parameters = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
-    connection = pika.BlockingConnection(parameters)
-    channel = connection.channel()
-   
+    if not aqmp_host:
+        raise ValueError("RABBITMQ_HOST environment variable is not set.")
 
-    # Declare exchange
-    channel.exchange_declare(
-        exchange=exchange_name, exchange_type="topic", durable=True
+    credentials = pika.PlainCredentials(username, password)
+
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host=aqmp_host, credentials=credentials, port=port)
     )
 
-    # Declare queues
-    channel.queue_declare(queue=CATEGORIES_TO_SHAREDALBUM_QUEUE, durable=True)
+    channel = connection.channel()
 
-    # Bind queue to the exchange with the same routing key
+    # Declare exchange and queue
+    channel.exchange_declare(
+        exchange=catb_to_sharedalbum_exchange, exchange_type="fanout", durable=True
+    )
+    channel.queue_declare(queue=catb_to_sharedalbum_queue, durable=True)
     channel.queue_bind(
-        exchange=exchange_name, queue=queue_name, routing_key=routing_key
+        exchange=catb_to_sharedalbum_exchange, queue=catb_to_sharedalbum_queue
     )
 
     # Start consuming with your handler for Step 9
     channel.basic_consume(
-        queue=queue_name,
+        queue=catb_to_sharedalbum_queue,
         on_message_callback=process_message,
-        auto_ack=True
+        auto_ack=True,
     )
-    
-    print("Waiting for messages from Categories...")
+
+    print("🟢 Waiting for messages from [CatB]...\n")
     channel.start_consuming()
 
 
-# TODO2: Returns msg to UI "Wait User!" upon a POST request to Shared Album microservice ✅
+# TODO2: Publish POST from [Frontend] to [Event Broker] -> [CatA]
 @app.route("/shared-album/add", methods=["POST"])
 @cross_origin()  # 👈 Add this decorator
 def add_video_to_shared_album():
     data = request.get_json()  # Get the JSON from the UI
-    print(data)
+
+    print(f"🟢 Received Message from [Frontend] [Save to Shared Album] ...\n")
+
+    print(f"🟢 Message Structure: {data}\n")
+
     if not data:
         return jsonify({"error": "No JSON received"}), 400
 
@@ -216,7 +188,7 @@ def add_video_to_shared_album():
         subscriber_list_bad = album.get("subscriber_list")[0]
         new_subscriber_list = subscriber_list_bad.split(",")
 
-        # TODO3: Send AQMP to Event Broker (Scenario 2) - Step 3
+        # TODO3: Send AQMP to [Event Broker]
         # {video_id, album_name, subscriber_list, category, input_email}
         msg_to_event_broker = {
             "video_id": video_id,
@@ -252,4 +224,4 @@ if __name__ == "__main__":
     consumer_thread = threading.Thread(target=start_consumer, daemon=True)
     consumer_thread.start()
 
-    app.run(debug=True, port=5100)
+    app.run(host="0.0.0.0", port=5100, debug=True)

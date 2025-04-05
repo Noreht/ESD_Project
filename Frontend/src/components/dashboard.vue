@@ -161,12 +161,12 @@
 
                 <div v-for="vid in cat.categorized_videos">
                   <h1>{{ vid.VideoId }}</h1>
-                  <video controls :src="`../src/assets/videos/${vid.VideoId}`" playsinline webkit-playsinline preload
+                  <video controls :src="`/videos/${vid.VideoId}`" playsinline webkit-playsinline preload
                     controlsList="nofullscreen">
                     <!--<source type="video/mp4"  >-->
                   </video>
 
-                  <a :href="`../src/assets/videos/${vid.VideoId}`"> </a>
+                  <a :href="`/videos/${vid.VideoId}`"> </a>
                 </div>
               </div>
             </div>
@@ -250,6 +250,9 @@ async function fetchVideos(userEmail) {
     })
     const data = response.data;
     const categorized_videos = data;
+
+    console.log("API Response:", data); // Log the API response for debugging
+
 
     // Group videos by their category.
     // If a video has an empty category, you could default it to 'Uncategorized'.

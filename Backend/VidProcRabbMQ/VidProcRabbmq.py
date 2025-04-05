@@ -3,10 +3,15 @@ import pytesseract
 import json
 import os
 import pika
-import rabbitmq.amqp_setup as amqp_setup  # Assuming you have this setup file
+
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+import os
+
+# Adds the parent directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import rabbitmq.amqp_setup as amqp_setup
+
 
 # Define category dictionaries
 categories = {
@@ -178,6 +183,12 @@ scenario2_categories = {
     ]
 }
 
+amqp_host = os.getenv("RABBITMQ_HOST", "localhost")  # Default to localhost if not set
+amqp_port = int(os.getenv("RABBITMQ_PORT", 5672))
+username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')
+password = os.getenv("RABBITMQ_PASS", "mypassword")
+
+
 # Define the different queues to consume from
 VIDEO_PROCESSING_QUEUE = "video_processing_queue"
 SCENARIO_2_VIDEO_PROCESSING_QUEUE = "scenario_2_video_processing_queue"
@@ -187,6 +198,13 @@ def process_video(video_path):
     """
     Process the given video file and return detected categories.
     """
+    print(f"Video Path: {video_path}")
+
+    if not os.path.exists(video_path):
+        print(f"Error: File does not exist at {video_path}")
+        return "Uncategorized"
+
+    extracted_text = ""
     vidcap = cv2.VideoCapture(video_path)
     fps = vidcap.get(cv2.CAP_PROP_FPS)
     frame_interval = int(fps * 0.2)  # Process every 200ms
@@ -194,10 +212,15 @@ def process_video(video_path):
     detected_categories = set()
     last_text = ""
 
+    if not vidcap.isOpened():
+        print(f"Error: Unable to open video file {video_path}")
+        return "Uncategorized"
+
     frame_count = 0
     while True:
         success, image = vidcap.read()
         if not success:
+            print("End of video or error reading frame.")
             break
 
         if frame_count % frame_interval == 0:
@@ -215,6 +238,8 @@ def process_video(video_path):
             )
             extracted_text = " ".join(ocr_data["text"]).strip()
 
+            # print(f"OCR Text:{extracted_text}")
+
             # Only process if text is detected & different from the last detected text
             if extracted_text and extracted_text != last_text:
                 last_text = extracted_text  # Store last text to avoid duplicates
@@ -223,10 +248,15 @@ def process_video(video_path):
                 for category, words in categories.items():
                     if any(word.lower() in extracted_text.lower() for word in words):
                         detected_categories.add(category)
+                        print(
+                            f"✅ Matched Category: {category} from text: '{extracted_text}'"
+                        )
 
         frame_count += 1
 
     vidcap.release()
+
+    print("Extracted Text", extracted_text)
 
     # Assign category (if multiple categories are found, return all)
     assigned_categories = (
@@ -236,11 +266,33 @@ def process_video(video_path):
     return assigned_categories
 
 
-def scenario2_process_video(video_path):
+def scenario2_process_video(video_path, album_id, input_person_email, subscriber_list):
     """
     Process the video for scenario 2 (looking for specific categories like "Shopping", "Food", etc.).
     """
+
+    # New dictionary for Scenario 2 categories
+    scenario2_categories = {
+        "Travel": [
+            "Shopping",
+            "Food",
+            "Landmarks",
+            "Photo Worthy",
+            "Hotel",
+            "Music Bank",
+            "Itinerary",
+            "Instagrammable",
+        ]
+    }
+
+    print(f"Video Path: {video_path}")
+
+    if not os.path.exists(video_path):
+        print(f"Error: File does not exist at {video_path}")
+        return {category: "Uncategorized"}
+
     vidcap = cv2.VideoCapture(video_path)
+    extracted_text = ""
 
     # Read the first frame
     success, image = vidcap.read()
@@ -281,11 +333,13 @@ def scenario2_process_video(video_path):
         "album_id": album_id,
         "categories": assigned_categories,
         "email_id": input_person_email,
+        "subscriber_list": subscriber_list,
     }
 
     # Print the JSON output (later this will be sent via AMQP)
     print("Extracted Text:", extracted_text)
     print(json.dumps(result, indent=4))
+    return result
 
 
 def callback(ch, method, properties, body):
@@ -296,16 +350,17 @@ def callback(ch, method, properties, body):
     video_id = message.get("video_id")
     album_id = message.get("album_id")
     input_person_email = message.get("email")
+    subscriber_list = message.get("subscriber_list", [])
 
     print(message)
 
+    #! Scenario 1 (Send back to [CatB])
     if video_id:
-        print(f"Received video ID: {video_id}")
+        print(f"🟢 Received video ID: {video_id}\n")
         if method.routing_key == "video.to_process":
-            video_path = (
-                "../Frontend/src/assets/videos/" + video_id
-            )  # For testing purposes
-            print("Video Path", video_path)
+            video_path = os.path.join("videos", video_id)
+
+            print("Video Path", video_path, "\n")
             detected_categories = process_video(video_path)
 
             # Prepare result for video processing
@@ -316,17 +371,33 @@ def callback(ch, method, properties, body):
             }
 
             # Publish result to RabbitMQ (or handle as needed)
-            print("Publishing message to RabbitMQ with routing_key='video.processed'")
+            print(
+                "🟢 [Scenario 1] Publishing message to RabbitMQ with [routing_key='video.processed'] to [CatB]... \n"
+            )
+
+            print(f"Message Structure: {processed_result}\n")
             amqp_setup.channel.basic_publish(
                 exchange=amqp_setup.exchange_name,
                 routing_key="video.processed",
                 body=json.dumps(processed_result),
                 properties=pika.BasicProperties(delivery_mode=2),  # Persistent message
             )
+
+        #! Scenario 2: Receive from [CatA] & Send categories to [CatB]
         elif method.routing_key == SCENARIO_2_VIDEO_PROCESSING_QUEUE:
             # Scenario 2 specific processing
-            result = scenario2_process_video(video_id)
-            print("Scenario 2 processing result:", result)
+            video_path = os.path.join("/app/videos", video_id)
+            result = scenario2_process_video(
+                video_path, album_id, input_person_email, subscriber_list
+            )
+
+            # Publish result to RabbitMQ (or handle as needed)
+            print(
+                "🟢 [Scenario 2] Publishing message to RabbitMQ with [routing_key='video.processed'] to [CatB]... \n"
+            )
+
+            print(f"🟢 The following message is sent to [Cat B]: \n{result}\n")
+
             # Publish or handle the result accordingly
             amqp_setup.channel.basic_publish(
                 exchange=amqp_setup.exchange_name,
@@ -340,12 +411,26 @@ def start_consuming():
     """
     Start the RabbitMQ consumer to listen for incoming messages.
     """
-    RABBITMQ_USER = os.getenv("RABBITMQ_USER", "myuser")
-    RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "mypassword")
-    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
-    parameters = pika.ConnectionParameters(host="rabbitmq", credentials=credentials)
-    connection = pika.BlockingConnection(parameters)
+    amqp_host = os.getenv(
+        "RABBITMQ_HOST", "localhost"
+    )  # Default to localhost if not set
+    amqp_port = int(os.getenv("RABBITMQ_PORT", 5672))
+    username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')
+    password = os.getenv("RABBITMQ_PASS", "mypassword")
+
+    credentials = pika.PlainCredentials(username, password)
+
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(
+            host=amqp_host,
+            port=amqp_port,
+            heartbeat=300,
+            blocked_connection_timeout=300,
+            credentials=credentials,
+        )
+    )
     channel = connection.channel()
+
     # Declare the queues to listen on
     channel.queue_declare(queue=VIDEO_PROCESSING_QUEUE)
     channel.queue_declare(queue=SCENARIO_2_VIDEO_PROCESSING_QUEUE)
@@ -373,10 +458,10 @@ def start_consuming():
     print(VIDEO_PROCESSING_QUEUE)
     print(SCENARIO_2_VIDEO_PROCESSING_QUEUE)
 
-    print("Waiting for messages from both queues...")
+    print("Waiting for messages from both queues...\n")
     channel.start_consuming()
 
 
 if __name__ == "__main__":
-    print("Starting Video Processing Service...")
+    print("🟢 Starting Video Processing Service...\n")
     start_consuming()

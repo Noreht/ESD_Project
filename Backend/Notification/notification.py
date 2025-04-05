@@ -32,11 +32,15 @@ def send_sms(to, body):
 
 
 def send_email(to, body):
-    print("Send email activated!")
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+    EMAIL_USER = os.getenv("EMAIL_USER", "joshuangjinhan@gmail.com")
+    EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "bhba blvs pjfd mvfn")
+
     msg = MIMEMultipart()
     msg["From"] = EMAIL_USER
-    msg["To"] = to
-    msg["Subject"] = body
+    msg["To"] = to.strip()
+    msg["Subject"] = body.replace("\n", "").strip()
     msg.attach(MIMEText(body, "plain"))
     print("msg", EMAIL_USER)
     try:
@@ -47,7 +51,8 @@ def send_email(to, body):
         print("Email:", text)
         server.sendmail(EMAIL_USER, to, text)
         server.quit()
-        print(f"Email sent to {to}: {body}")
+        print(f"🟢 Email sent to {to}: {body}")
+
     except Exception as e:
         print(f"Failed to send email to {to}: {str(e)}")
 
@@ -56,7 +61,7 @@ if ENV == "production":
     RABBITMQ_CONFIGS = [
         {
             "name": "shared_album",
-            "host": "rabbitmq",  # INSERT ADDRESS HERE
+            "host": "",  # INSERT ADDRESS HERE
             "exchange": "SHARED_ALBUM_EXCHANGE",
             "exchange_type": "fanout",  # place exchange type here
             "queue": "SHARED_ALBUM_QUEUE",
@@ -65,7 +70,7 @@ if ENV == "production":
         },
         {
             "name": "event_broker",
-            "host": "rabbitmq",  # INSERT ADDRESS HERE
+            "host": "",  # INSERT ADDRESS HERE
             "exchange": "EVENT_BROKER_EXCHANGE",
             "exchange_type": "fanout",
             "queue": "EVENT_BROKER_QUEUE",
@@ -102,6 +107,14 @@ else:
             "queue": "categories_to_notifications_queue",
             "routing_key": "cat_firenforget",
         },
+        {
+            "name": "CatB_to_Shared_album",
+            "host": "rabbitmq",
+            "exchange": "catb_to_sharedalbum_exchange",
+            "exchange_type": "fanout",
+            "queue": "catb_to_notifications_queue",
+            "routing_key": "",
+        },
     ]
 
 
@@ -111,12 +124,14 @@ def setup_and_consume(config, callback):
     Sets up the connection, channel, exchanges, queues, and starts consuming messages.
     """
     try:
-        RABBITMQ_USER = os.getenv("RABBITMQ_USER", "myuser")
-        RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "mypassword")
+        username = os.getenv("RABBITMQ_USER", "myuser")  #! (this may be 'guest')
+        password = os.getenv("RABBITMQ_PASS", "mypassword")
 
-        credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
-        parameters = pika.ConnectionParameters(host="rabbitmq", credentials=credentials)
-        connection = pika.BlockingConnection(parameters)
+        credentials = pika.PlainCredentials(username, password)
+
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=config["host"], credentials=credentials)
+        )
         channel = connection.channel()
 
         # Declare the exchange using the configured exchange type.
@@ -134,9 +149,9 @@ def setup_and_consume(config, callback):
         )
 
         print(
-            f"[Notifications] 🟢 Waiting for messages on '{config['name']}' "
+            f"[Notifications] 🟢 Waiting for messages on '{config['name']}'"
             f"from exchange '{config['exchange']}' ({config['exchange_type']}) at {config['host']} "
-            f"with routing key '{routing_key}'."
+            f"with routing key '{routing_key}'\n"
         )
 
         # Start consuming messages using the provided callback.
@@ -150,79 +165,79 @@ def setup_and_consume(config, callback):
 
 def callback(ch, method, properties, body):
     print(
-        f"Received message from {method.exchange} on queue {method.routing_key}: {body}"
+        f"🟢 Received message from [Exchange {method.exchange}] on [Queue {method.routing_key}]: {body}"
     )
     try:
-        #! Theron original code
-        # message = json.loads(body)
-        # category_result = message.get('categories')
-        # root_video = message.get("video_id")
-        # email = message.get('email')
-        # subscribers = message.get("subscriber_list", "")
-
-        # phone = "88164892"
-        # text = f"Hey! Your recently saved video, {root_video}, was saved under {category_result}. Check it out now!"
-
-        # if subscribers != "":
-        #     subscribers.append(message.get("input_person"))
-        #     for subscriber in subscribers:
-        #         await_text = f"Hey! Your friend {message.get('input_person')} just added a new video, {root_video} to your Shared album, {message.get('album_id')}! Check it out soon!"
-        #         send_email(subscriber, await_text)
-        # if email:
-        #     send_email(email, text)
-        # if phone:
-        #     send_sms(phone, text)
 
         message = json.loads(body)
 
-        # Common fields
-        root_video = message.get("video_id") or message.get("new_vid_id")
-        email = message.get(
-            "input_person"
-        )  #! Hardcoded as of now (Categories need to send a fking email) - Configure in Categories.PY (IDK WHICH ONE)
+        # TODO: for scenario 1 (Send to input_person)
+        if method.exchange == "video_processing_topic":
+            # message: {"video_id": "Food1.mp4", "categories": "Food", "email": "layfoo@is214.com"}
+            print(
+                "\n 🟢 Successfully eavesdropped [Vid-Proc] -> [Cat-B] for Scenario1 ... \n"
+            )
+            video_id = message.get("video_id")
+            category = message.get("categories")
+            email = message.get("email")
+            album_id = message.get("album_id", "")
+            subscribers = message.get("subscriber_list", [])
 
-        print(email)
+            if email:
+                msg = (
+                    f"Hey! Your recently saved video, {video_id}, "
+                    f"was saved under {category}. "
+                    f"Check it out now 👑!"
+                )
+                send_email(email, msg)
 
-        album_name = message.get("shared_album_name") or message.get("album_id")
-        input_person = message.get("input_person", "Your friend")
-        subscribers = message.get("subscriber_list", [])
-        new_vid_subcategory = message.get("new_vid_category") or message.get(
-            "categories"
-        )
-        phone = "88164892"  # Demo/test only
+        elif method.exchange == "event_broker_exchange":
+            print("🟢 Successfully heard from [Event Broker]... \n")
 
-        print(f"Email to:{subscribers}")
-        if not isinstance(subscribers, list):
-            subscribers = []
+            # Get data fields from [Event Broker]
+            video_id = message.get("video_id") or message.get("new_vid_id")
+            album_name = message.get("shared_album_name") or message.get("album_id")
+            input_person = message.get("input_person", "Your friend")
+            subscribers = message.get("subscriber_list", [])
+            category = message.get("category", "")
+            phone = "88164892"  # Demo/test onlyno.
+            email = message.get("input_person")
 
-        # 🎯 DIFFERENT messages based on exchange
-        if method.exchange == "event_broker_exchange":
-            print("I received from Event Broker")
+            print(f"🟢 Email will be broadcasted to {subscribers} ... \n")
 
-            # Scenario 1: From Event Broker → notify subscribers (await_text)
-            await_text = f"Hey! Your friend {input_person} just added a new video, {root_video} to your Shared album, {album_name}! Check it out soon!"
+            # Default message for other cases
+            email_text = (
+                f"Hey! Your friend {input_person} just added a new video, {video_id} to your Shared album, {album_name}! "
+                f"Check it out soon! 🎉"
+            )
+
             subscribers.append(input_person)
             for subscriber in set(subscribers):
-                send_email(subscriber, await_text)
+                send_email(subscriber, email_text)
 
-        elif method.exchange == "categories_to_sharedalbum_topic":
-            print("I received from Categories Fire Forget\n")
-            # Scenario 2: From Categories (fire and forget) → Step 10 msg
-            msg = (
-                f"New video added into {album_name}, under subcategory {new_vid_subcategory} by {input_person}!\n"
-                f"Check your updated {album_name} shared album now!"
-            )
+        elif method.exchange == "catb_to_sharedalbum_exchange":
+            print("🟢 Successfully heard from [CatB]... \n")
+
+            # Get data fields from [CatB]
+            video_id = message.get("video_id")
+            category = message.get("category", "Uncategorized")
+            email = message.get("email") or message.get("email_id")
+            album_id = message.get("album_id", "")
+            subscriber_list = message.get("subscriber_list", [])
+
             if email:
-                subscribers.append(input_person)
-                for subscriber in set(subscribers):
-                    send_email(subscriber, msg)
+                email_text = (
+                    f"OMG! A new video, {video_id}, has been added under the subcategory '{category}' "
+                    f"in the shared album '{album_id}'. Check it out now to get mindblown!!!!! 😍🐳😌"
+                )
 
-            send_sms(phone, msg)  # Optional — you can comment this out if not needed
+                for subscriber in set(subscriber_list):
+                    send_email(subscriber, email_text)
 
     except Exception as e:
         print(f"Error processing message: {e}")
 
-    print(f"Processed message: {body}")
+    print(f"\n🟢 Processed message: {body}")
 
 
 threads = []
@@ -235,117 +250,9 @@ for config in RABBITMQ_CONFIGS:
 # Add this at the VERY END of the file (last 4 lines)
 if __name__ == "__main__":
     print(
-        f"[Notifications] 🟢 Listening to: {', '.join([cfg['name'] for cfg in RABBITMQ_CONFIGS])}"
+        f"[Notifications] 🟢 Listening to: {', '.join([cfg['name'] for cfg in RABBITMQ_CONFIGS])}\n"
     )
     try:
         threading.Event().wait()  # Block forever with zero CPU usage
     except KeyboardInterrupt:
         print("\n[Notifications] Shutting down...")
-
-
-# # Acknowledged with the use of Copilot on 15 March for the group project.
-# # Copilot was used in helping me to get the correct code to use
-# # environment variables.
-
-# import json, pika, os, smtplib
-# from email.mime.text import MIMEText
-# from email.mime.multipart import MIMEMultipart
-# from twilio.rest import Client
-# from dotenv import load_dotenv
-
-# # Load environment variables from sensitive_info.env file
-# load_dotenv('sensitive_info.env')
-
-
-# #configuration for shared albums
-# AMQP_HOST = os.getenv("RABBITMQ_HOST", "localhost")
-# SHARED_ALBUM_EXCHANGE = "shared_album_exchange"  # sent by shared_album (step 9)
-# SHARED_ALBUM_QUEUE = "shared_album_queue"  # listen to shared_album
-
-# EVENT_BROKER_EXCHANGE = "event_broker_exchange"  # event_broker (step 3)
-# EVENT_BROKER_QUEUE = "notifications_queue"  # listen to event_broker
-
-
-# # Configure Twilio
-# ACCOUNT_SID = os.getenv('ACCOUNT_SID')
-# AUTH_TOKEN = os.getenv('AUTH_TOKEN')
-# TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
-
-# # Configure Email
-# smtp_server = 'smtp.gmail.com'
-# smtp_port = 587
-# EMAIL_USER = os.getenv('EMAIL_USER')
-# EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
-
-# def send_sms(to, body):
-#     client = Client(ACCOUNT_SID, AUTH_TOKEN)
-#     message = client.messages.create(
-#         body=body,
-#         from_=TWILIO_PHONE_NUMBER,
-#         to=to
-#     )
-#     print(f"SMS sent to {to}: {body}")
-
-
-# def callback(ch, method, properties, body):
-#     message = json.loads(body)
-#     print(f"User Received Notification: {body}")
-#     #identify what is the process being performed
-#     if method.routing_key == SHARED_ALBUM_QUEUE:
-#         print("📸 Received new video data from []:")
-#         print(json.dumps(message, indent=2))
-
-#         print(f"[Notification Microservice] sending to {message['subscriber_list']}")
-
-#         print(
-#             f"New video added into Shared Album ({message['shared_album_name']}), under subcategory {message['new_vid_subcategory']}. Check your updated {message['shared_album_name']}"
-#         )
-
-#     elif method.routing_key == EVENT_BROKER_QUEUE:
-#         print("\n🔔 Received new video data from [Event Broker]:")
-#         print(json.dumps(message, indent=2))
-
-#         print(f"[Notification Microservice] sending to {message['subscriber_list']}...")
-#         print(
-#             f"New video added into Shared Album ({message['album_id']}). Autocategorisation in progress... Please check later for categories into {message['album_id']}"
-#         )
-
-
-#     #send email and sms
-#     if 'to' in message and 'body' in message:
-#         send_sms(message['to'], message['body'])
-
-#     if 'email' in message and 'body' in message:
-#         send_email(message['email'], message['body'])
-
-
-# def send_email(to, body):
-#     msg = MIMEMultipart()
-#     msg['From'] = EMAIL_USER
-#     msg['To'] = to
-#     msg['Subject'] = 'You have received a notification.'
-#     msg.attach(MIMEText(body, 'plain'))
-
-#     try:
-#         server = smtplib.SMTP(smtp_server, smtp_port)
-#         server.starttls()
-#         server.login(EMAIL_USER, EMAIL_PASSWORD)
-#         text = msg.as_string()
-#         server.sendmail(EMAIL_USER, to, text)
-#         server.quit()
-#         print(f"Email sent to {to}: {body}")
-#     except Exception as e:
-#         print(f"Failed to send email to {to}: {str(e)}")
-
-
-# connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-# channel = connection.channel()
-
-# channel.exchange_declare(exchange='notifications', exchange_type='direct')
-# channel.queue_declare(queue='notification_queue')
-# channel.queue_bind(exchange='notifications', queue='notification_queue', routing_key='notification.py')
-
-# channel.basic_consume(queue='notification_queue', on_message_callback=callback, auto_ack=True)
-
-# print('Waiting for messages. To exit, press CTRL+C.')
-# channel.start_consuming()

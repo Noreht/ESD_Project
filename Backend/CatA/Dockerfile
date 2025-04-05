@@ -10,6 +10,7 @@ ENV PYTHONPATH="${PYTHONPATH}:/app"
 # In Dockerfile for videoprocrabbmq
 WORKDIR /app
 COPY . /app
+
 # Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

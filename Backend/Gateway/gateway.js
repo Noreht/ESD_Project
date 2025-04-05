@@ -5,6 +5,7 @@ const cors = require("cors");
 app.use(cors());
 
 app.use(express.json());
+require("dotenv").config();
 
 const NODE_ENV = "development"; //process.env.NODE_ENV ||
 
@@ -94,7 +95,7 @@ app.post("/RetrieveAllAlbums", async (req, res) => {
 const SHARED_ALBUM_URL =
   //NODE_ENV === 'production'
   //? process.env.CAT_A_SERVICE_URL:  // place render url here
-  "http://catA:5100";
+  "http://sharedalbum:5100";
 
 app.post("/saveSharedAlbum", async (req, res) => {
   console.log("Received request at Saved Shared Album Button", req.body);
@@ -261,6 +262,16 @@ app.post("/InsertProcessedVideo", async (req, res) => {
   }
 });
 //End of Insert Video
+
+// Console Log Received stuff from catb
+//! Can send to Frontend 
+app.post("/NotifyFrontend", (req, res) => {
+  const { album_id } = req.body;
+
+  console.log(`Received album_id: ${album_id}`);
+  // Logic to fetch subcategories for the album_id from OutSystems or another service
+  res.status(200).send(`Album ID ${album_id} processed successfully.`);
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
