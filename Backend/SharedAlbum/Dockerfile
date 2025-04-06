@@ -9,10 +9,12 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Copy only requirements first (for layer caching)
-COPY requirements.txt .
+COPY requirements.txt /app/
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+
 
 # Now copy your whole app
 COPY . .

@@ -60,9 +60,11 @@ services:
     networks:
       - esd-net
   catb:
-    build: ./backend/catb
+    build:
+      context: ./Backend/CatB
+      dockerfile: Dockerfile
     container_name: catb
-    command: python catb.py
+    command: python CatB.py
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -71,9 +73,6 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: myuser
       RABBITMQ_PASS: mypassword
-
-    env_file:
-      - ./backend/.env
     networks:
       - esd-net
 
@@ -132,10 +131,14 @@ services:
     networks:
       - esd-net
 
+  
+
   vidprocrabbmq:
-    build: ./backend/vidprocrabbmq
+    build:
+      context: ./Backend/VidProcRabbMQ
+      dockerfile: Dockerfile
     container_name: vidprocrabbmq
-    command: python vidprocrabbmq.py
+    command: python VidProcRabbmq.py
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -144,12 +147,14 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: myuser
       RABBITMQ_PASS: mypassword
+
     env_file:
       - ./backend/.env
+
     networks:
       - esd-net
     volumes:
-      - ./Frontend/src/assets/videos:/app/videos
+    - ./Frontend/src/assets/videos:/app/videos
 
 
   frontend:
