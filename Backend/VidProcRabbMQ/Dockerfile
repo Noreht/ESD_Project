@@ -1,7 +1,12 @@
 FROM python:3.11-slim
 
 # Install system dependencies for OpenCV and Tesseract
-RUN apt-get update && apt-get install -y \
+RUN echo 'Acquire::http::Pipeline-Depth "0";' > /etc/apt/apt.conf.d/99nopipelining
+
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && apt-get update --fix-missing \
+    && apt-get install -y \
     tesseract-ocr \
     libglib2.0-0 \
     libsm6 \

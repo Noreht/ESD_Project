@@ -388,6 +388,7 @@ function saveVideo(videoId) {
     .catch(error => {
       console.error("Error while posting video:", error)
     })
+  fetchVideos(userEmail)
 }
 
 function saveSharedAlbum(videoId) {
