@@ -59,7 +59,6 @@ services:
       
     networks:
       - esd-net
-
   catb:
     build: ./backend/catb
     container_name: catb
