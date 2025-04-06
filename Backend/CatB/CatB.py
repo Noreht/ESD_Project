@@ -56,29 +56,57 @@ OUTSYSTEMS_BASE_URL = "https://personal-e6asw36f.outsystemscloud.com/VideoCatego
 
 
 def insert_into_outsystems(video_id, category, email, album_id="", subscriber_list=[]):
-    url = f"http://gateway:3000/InsertProcessedVideo"
-    payload = {
-        "VideoId": video_id,
-        "category": category,
-        "email": email,
-        "albumid": album_id,
-    }
 
-    headers = {"Content-Type": "application/json"}
+    # If album_id is empty, then send to InsertProcessedVideo (Scenario 1) - Outsystems will have album_id = "" (/InsertPersonal)
+    url = ""
 
-    print(f"\n🟢 [CatB] Sending to OutSystems → {json.dumps(payload)}\n")
+    if album_id == "":
+        url = f"http://gateway:3000/InsertProcessedVideo"
+        payload = {
+            "VideoId": video_id,
+            "category": category,
+            "email": email,
+        }
+
+        print(
+            f"\n🟢 [CatB] Sending to OutSystems (Scenario 1) → {json.dumps(payload)}\n"
+        )
+
+    else:
+        url = f"http://gateway:3000/InsertProcessedVideoForAlbum"
+        payload = {
+            "VideoId": video_id,
+            "Category": category,
+            "Email": email,
+            "AlbumId": album_id,
+        }
+        print(
+            f"\n🟢 [CatB] Sending to OutSystems (Scenario 2) → {json.dumps(payload)}\n"
+        )
 
     try:
+
+        # Insertion into Outsystems DB
+        headers = {"Content-Type": "application/json"}
+
         response = requests.post(url, json=payload, headers=headers)
+
         print(f"🟢 [CatB] OutSystems responded with status {response.status_code}\n")
         print("Response body:", response.text, "\n")
 
         if response.status_code == 200:
-            print(f"🟢 [CatB] Inserted: {video_id} → {category} for {email}")
+            print(
+                f"🟢 [CatB] Inserted: {video_id} → {category} for {email} in [{album_id}] Album ! "
+            )
+
             # Fire-and-forget to sharedalbum if album_id exists
-            if album_id:
+            if album_id != "":
                 fire_and_forget_to_sharedalbum(
-                    video_id, category, email, album_id, subscriber_list=subscriber_list
+                    video_id,
+                    category,
+                    email,
+                    album_id,
+                    subscriber_list=subscriber_list,
                 )
         else:
             print(f"[CatB] Failed to insert. Status: {response.status_code}")
@@ -114,7 +142,7 @@ def fire_and_forget_to_sharedalbum(
         )
         channel = connection.channel()
 
-         # Declare exchange
+        # Declare exchange
         channel.exchange_declare(
             exchange=catb_to_sharedalbum_exchange, exchange_type="fanout", durable=True
         )
@@ -129,7 +157,7 @@ def fire_and_forget_to_sharedalbum(
         print(f"🟢 [CatB] Fire-and-forget message sent to [Shared Album]: {message}\n")
 
         connection.close()
-        
+
     except Exception as e:
         print(f"❌ [CatB] Error sending fire-and-forget to sharedalbum: {str(e)}")
 

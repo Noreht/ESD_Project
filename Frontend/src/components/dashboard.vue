@@ -159,14 +159,15 @@
 
                 </button>
 
+
                 <div v-for="vid in cat.categorized_videos">
                   <h1>{{ vid.VideoId }}</h1>
-                  <video controls :src="`/videos/${vid.VideoId}`" playsinline webkit-playsinline preload
-                    controlsList="nofullscreen">
+                  <video controls :src="`/videos/${encodeURIComponent(vid.VideoId)}`" playsinline webkit-playsinline
+                    preload controlsList="nofullscreen">
                     <!--<source type="video/mp4"  >-->
                   </video>
 
-                  <a :href="`/videos/${vid.VideoId}`"> </a>
+                  <a :href="`/videos/${encodeURIComponent(vid.VideoId)}`"> </a>
                 </div>
               </div>
             </div>
@@ -250,14 +251,19 @@ async function fetchVideos(userEmail) {
     })
     const data = response.data;
     const categorized_videos = data;
+    savedVideos.value = data;
+
 
     console.log("API Response:", data); // Log the API response for debugging
+    console.log("Categories:", categories.value);
 
 
     // Group videos by their category.
     // If a video has an empty category, you could default it to 'Uncategorized'.
     const groupedCategories = data.reduce((groups, categorized_videos) => {
-      const category = categorized_videos.Category && categorized_videos.Category.trim() !== '' ? categorized_videos.Category : 'Uncategorized';
+      const rawCategory = categorized_videos.Category || categorized_videos.category || '';
+      const category = rawCategory.trim() !== '' ? rawCategory : 'Uncategorized';
+
       if (!groups[category]) {
         groups[category] = [];
       }

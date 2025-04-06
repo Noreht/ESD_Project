@@ -327,9 +327,10 @@ def scenario2_process_video(video_path, album_id, input_person_email, subscriber
         ",".join(detected_categories) if detected_categories else "Uncategorized"
     )
 
+    video_id = video_path[12:]
     # Create the JSON object with video path (later this will be URL)
     result = {
-        "video_id": video_path,
+        "video_id": video_id,
         "album_id": album_id,
         "categories": assigned_categories,
         "email_id": input_person_email,
@@ -387,6 +388,9 @@ def callback(ch, method, properties, body):
         elif method.routing_key == SCENARIO_2_VIDEO_PROCESSING_QUEUE:
             # Scenario 2 specific processing
             video_path = os.path.join("/app/videos", video_id)
+
+            print("Video Path", video_path, "\n")
+
             result = scenario2_process_video(
                 video_path, album_id, input_person_email, subscriber_list
             )

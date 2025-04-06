@@ -16,6 +16,7 @@ FROM nginx:alpine
 
 # Copy built files to Nginx's web directory
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY ./src/assets/videos /usr/share/nginx/html/videos
 
 # (Optional) Replace the default nginx config if needed
 # COPY nginx.conf /etc/nginx/nginx.conf

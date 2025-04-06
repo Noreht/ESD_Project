@@ -163,4 +163,4 @@ services:
     networks:
       - esd-net
     volumes:
-      - ./Frontend/src/assets/videos:/usr/share/nginx/html/videos
+      - ./Frontend/src/assets/videos:/app/videos

@@ -228,9 +228,10 @@ app.post("/CheckExists", async (req, res) => {
 });
 //
 
-//Start of Insert Video
+//! Start of Insert Video (For Scenario 1: There is no album_id attribute )
 const INSERT_URL =
   "https://personal-e5asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories";
+
 app.post("/InsertProcessedVideo", async (req, res) => {
   console.log("Received request at Insert Processed Video:", req.body);
   const { VideoId, category, email } = req.body;
@@ -238,13 +239,14 @@ app.post("/InsertProcessedVideo", async (req, res) => {
     // posts frontend request to the cat a service
     console.log("Gateway initiated");
 
+    console.log("Raw body:", req.body);
+    console.log("VideoId:", req.body.VideoId);
+    console.log("category:", req.body.category);
+    console.log("email:", req.body.email);
+
     const response = await axios.post(
       `${CAT_RETRIEVAL_URL}/InsertPersonal`,
-      {
-        VideoId,
-        category,
-        email,
-      },
+      req.body,
       {
         headers: {
           "Content-Type": "application/json",
@@ -263,8 +265,40 @@ app.post("/InsertProcessedVideo", async (req, res) => {
 });
 //End of Insert Video
 
+//! Insert Video (For Scenario 2: There is an album_id attribute )
+app.post("/InsertProcessedVideoForAlbum", async (req, res) => {
+  console.log(
+    "Received request at Insert Processed Video for Album:",
+    req.body
+  );
+  const { VideoId, category, email, album_id } = req.body;
+  try {
+    // Forward the request to OutSystems
+    console.log("Gateway initiated");
+
+    const response = await axios.post(
+      `${CAT_RETRIEVAL_URL}/InsertForAlbum`,
+      req.body,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error(
+      "❌ Error forwarding request to Insert Processed Video for Album service:",
+      error.message
+    );
+    res.status(500).json({ error: "❌ Error inserting video for album" });
+  }
+});
+// End of Insert Video for Album
+
 // Console Log Received stuff from catb
-//! Can send to Frontend 
+//! Can send to Frontend
 app.post("/NotifyFrontend", (req, res) => {
   const { album_id } = req.body;
 
