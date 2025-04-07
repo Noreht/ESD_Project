@@ -25,7 +25,6 @@ Setup Instructions:
    INSTAGRAM_PASSWORD=dummy_2025
 
 Testing:
-- Unit testing was supported using ChatGPT.
 - Code was implemented in Python and tested for functional correctness.
 
 Note:
