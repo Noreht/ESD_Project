@@ -90,9 +90,9 @@ services:
       context: ./Backend/FindTop5  # this folder must contain findtop5.py
       dockerfile: Dockerfile
 
-    container_name: findTop5
-    command: python findTop5.py
-    image: findTop5
+    container_name: findtop5
+    command: python findtop5.py
+    image: findtop5
     ports:
       - "5300:5300"
     depends_on:

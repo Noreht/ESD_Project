@@ -12,8 +12,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the service code into the container
-COPY findTop5.py /app/
+COPY findtop5.py /app/
 
 
 # Run the Flask app
-CMD ["python", "findTop5.py"]
+CMD ["python", "findtop5.py"]
