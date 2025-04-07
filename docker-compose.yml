@@ -50,6 +50,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    image: cata
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -89,6 +90,7 @@ services:
 
     container_name: findtop5
     command: python findtop5.py
+    image: findtop5
     ports:
       - "5300:5300"
     depends_on:
