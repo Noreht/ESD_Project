@@ -9,7 +9,6 @@ ENV PYTHONPATH="${PYTHONPATH}:/app"
 # Set work directory
 # In Dockerfile for videoprocrabbmq
 WORKDIR /app
-COPY . /app
 
 # Install dependencies
 COPY requirements.txt .

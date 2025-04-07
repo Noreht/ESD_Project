@@ -40,7 +40,9 @@ services:
       - esd-net
 
   cata:
-    build: ./backend/cata
+    build: 
+      context: ./Backend/CatA
+      dockerfile: Dockerfile
     container_name: cata
     command: python cata.py
     ports:
@@ -73,12 +75,17 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: myuser
       RABBITMQ_PASS: mypassword
+
+    env_file:
+      - ./backend/.env
+
     networks:
       - esd-net
 
   findtop5:
     build: 
-      context: ./backend/findtop5  # this folder must contain findtop5.py
+      context: ./Backend/FindTop5  # this folder must contain findtop5.py
+      dockerfile: Dockerfile
 
     container_name: findtop5
     command: python findtop5.py
@@ -87,6 +94,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
+    env_file:
+      - ./backend/.env
+
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
