@@ -307,7 +307,33 @@ app.post("/NotifyFrontend", (req, res) => {
   res.status(200).send(`Album ID ${album_id} processed successfully.`);
 });
 
+app.get("/RetrieveSharedAlbum", async (req, res) => {
+  console.log("Received request at Retrieve Shared Albums:", req.query);
+  OUTSYSTEMS_URL =
+    "https://personal-e5asw36f.outsystemscloud.com/VideoCategories/rest/RetrieveVideoCategories/RetrieveAllAlbum";
+  try {
+    const response = await axios.post(OUTSYSTEMS_URL, req.query, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log(res.json(response.data), "!!!!!!!!!!");
+  } catch (error) {
+    console.error(
+      "Error forwarding request to Retrieve Shared Albums service:",
+      error.message
+    );
+    res.status(500).json({ error: "Error processing Retrieve Shared Albums" });
+  }
+});
+
+//
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`API Gateway running on port ${PORT} in ${NODE_ENV} mode.`);
 });
+// End of notification
+
+//

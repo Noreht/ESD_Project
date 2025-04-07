@@ -177,8 +177,34 @@
 
           </div>
           <div v-else-if="currentTab.name === 'Shared Albums'">
-            <p>Share videos with your friends!</p>
+            <div>
+              <p>Share videos with your friends!</p>
 
+              <!-- Dropdown or buttons to select category -->
+              <div class="category-selector">
+                <label>Select Category:</label>
+                <select v-model="currentCategory">
+                  <option v-for="category in shared_album_categories" :key="category.name" :value="category.name">
+                    {{ category.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Display videos by selected category -->
+              <div class="video-list">
+                <div
+                  v-for="video in shared_album_categories.find(cat => cat.name === currentCategory)?.shared_album_categories || []"
+                  :key="video.VideoId">
+                  <h1>{{ video.VideoId }} {{ currentCategory }}</h1>
+                  <video controls :src="`/videos/${encodeURIComponent(video.VideoId)}`" playsinline webkit-playsinline
+                    preload controlsList="nofullscreen">
+                    <!--<source type="video/mp4"  >-->
+                  </video>
+
+                  <a :href="`/videos/${encodeURIComponent(video.VideoId)}`"> </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -338,7 +364,7 @@ const navigation = reactive([
 const userNavigation = [
   { name: 'Your Profile', href: '#' },
   { name: 'Settings', href: '#' },
-  { name: 'Sign out', href: '#' },
+  { name: 'Sign out', href: '/login' },
 ]
 
 // Set the default active tab to "Overview"
@@ -397,6 +423,62 @@ function saveVideo(videoId) {
   fetchVideos(userEmail)
 }
 
+// Master list of shared album videos.
+const sharedAlbumVideos = ref([])
+const shared_album_categories = ref([])
+
+async function retrieveSharedAlbum() {
+  console.log("retrieveSharedAlbum pressed");
+
+  try {
+    // Replace with your API gateway URL for RetrieveSharedAlbum.
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/RetrieveSharedAlbum`, {
+      params: {
+        AlbumId: "Korea Trip",
+        Category: ""
+      }
+    });
+
+    const data = response.data;
+    sharedAlbumVideos.value = data;
+
+    console.log("API Response:", data); // Log the API response for debugging
+
+    // Group videos by their category.
+    const groupedCategories = data.reduce((groups, video) => {
+      const rawCategory = video.Category || video.category || '';
+      const category = rawCategory.trim() !== '' ? rawCategory : 'Uncategorized';
+
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(video);
+      return groups;
+    }, {});
+
+    // Convert the grouped object into an array of category objects.
+    const categoryList = Object.keys(groupedCategories)
+      .sort()
+      .map(category => ({
+        name: category,
+        shared_album_categories: groupedCategories[category]
+      }));
+
+    // Prepend an "All" category which contains all videos.
+    shared_album_categories.value = [
+      { name: 'All', shared_album_categories: data },
+      ...categoryList
+    ];
+
+    console.log("Shared Album Categories", shared_album_categories.value);
+    // Set default category to 'All'
+    currentCategory.value = 'All';
+  } catch (error) {
+    console.error("Error fetching shared album videos:", error);
+  }
+}
+
+
 function saveSharedAlbum(videoId) {
 
   console.log("saveSharedAlbum pressed for:", videoId)
@@ -410,9 +492,26 @@ function saveSharedAlbum(videoId) {
   )
     .then(response => {
       console.log("Response from backend:", response.data)
+
+      retrieveSharedAlbum()
+
+      console.log("Shared Album Vids", sharedAlbumVideos)
+
     })
     .catch(error => {
       console.error("Error while posting video:", error)
     })
+
+  // axios.post(`${import.meta.env.VITE_API_URL}/notifyFrontend`, {
+  //   "album_id": "Korea Trip",
+  // })
+  //   .then(response => {
+  //     console.log("Response from backend:", response.data)
+  //   })
+  //   .catch(error => {
+  //     console.error("Error while saving video:", error)
+  //   })
+
+
 }
 </script>
