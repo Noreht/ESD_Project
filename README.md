@@ -9,7 +9,7 @@ To run the app, please type the following commaands.
 1. Clone the repository on your local machine
 2. Ensure that you have Docker installed
 3. Please refer to our submissions, and insert Frontend/`.env` into `Frontend/` environment. Do the same for `Backend`. At this point, both `Backend/` and `Frontend/` should have a separate `.env`. 
-4. Once you are in ___ branch, ensure Docker is running and type `docker compose up --build` and wait for all microservices to load. Our microservices include:
+4. Once you are in `main` branch, ensure Docker is running and type `docker compose up --build` and wait for all microservices to load. Our microservices include:
    - cata
    - rabbitmq
    - catb
