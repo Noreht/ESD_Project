@@ -12,7 +12,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the Python file
-COPY CatB.py /app/
+COPY catb.py /app/
 
 # Run the main script
-CMD ["python", "CatB.py"]
+CMD ["python", "catb.py"]

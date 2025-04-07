@@ -24,7 +24,7 @@ services:
 
   gateway:
     build: 
-      context: ./Backend/Gateway
+      context: ./backend/gateway
       dockerfile: Dockerfile
     container_name: gateway
     command: node gateway.js
@@ -43,7 +43,7 @@ services:
 
   cata:
     build: 
-      context: ./Backend/CatA
+      context: ./backend/cata
       dockerfile: Dockerfile
     container_name: cata
     command: python cata.py
@@ -60,16 +60,16 @@ services:
       RABBITMQ_PASS: mypassword
 
     env_file:
-      - ./Backend/.env
+      - ./backend/.env
       
     networks:
       - esd-net
   catb:
     build:
-      context: ./Backend/CatB
+      context: ./backend/catb
       dockerfile: Dockerfile
     container_name: catb
-    command: python CatB.py
+    command: python catb.py
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
 
   findtop5:
     build: 
-      context: ./Backend/FindTop5  # this folder must contain findtop5.py
+      context: ./backend/findtop5  # this folder must contain findtop5.py
       dockerfile: Dockerfile
 
     container_name: findtop5
@@ -100,7 +100,7 @@ services:
         condition: service_healthy
 
     env_file:
-      - ./Backend/.env
+      - ./backend/.env
 
     environment:
       RABBITMQ_HOST: rabbitmq
@@ -112,7 +112,7 @@ services:
 
   notification:
     build: 
-      context: ./Backend/Notification
+      context: ./backend/notification
       dockerfile: Dockerfile
     container_name: notification
     command: python notification.py
@@ -125,14 +125,14 @@ services:
       RABBITMQ_USER: myuser
       RABBITMQ_PASS: mypassword
     env_file:
-      - ./Backend/.env
+      - ./backend/.env
 
     networks:
       - esd-net
 
   sharedalbum:
     build: 
-      context: ./Backend/SharedAlbum
+      context: ./backend/sharedalbum
       dockerfile: Dockerfile
     container_name: sharedalbum
     command: python sharedalbum.py
@@ -148,7 +148,7 @@ services:
       RABBITMQ_PASS: mypassword
 
     env_file:
-      - ./Backend/.env
+      - ./backend/.env
     networks:
       - esd-net
 
@@ -156,10 +156,10 @@ services:
 
   vidprocrabbmq:
     build:
-      context: ./Backend/VidProcRabbMQ
+      context: ./backend/vidprocrabbmq
       dockerfile: Dockerfile
     container_name: vidprocrabbmq
-    command: python VidProcRabbmq.py
+    command: python vidprocrabbmq.py
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -170,17 +170,17 @@ services:
       RABBITMQ_PASS: mypassword
 
     env_file:
-      - ./Backend/.env
+      - ./backend/.env
 
     networks:
       - esd-net
     volumes:
-    - ./Frontend/src/assets/videos:/app/videos
+    - ./frontend/src/assets/videos:/app/videos
 
 
   frontend:
     build: 
-      context: ./Frontend
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: vue_frontend
     ports:
@@ -191,4 +191,4 @@ services:
     networks:
       - esd-net
     volumes:
-      - ./Frontend/src/assets/videos:/app/videos
+      - ./frontend/src/assets/videos:/app/videos

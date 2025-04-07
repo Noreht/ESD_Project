@@ -7,7 +7,7 @@ import sys
 import os
 
 
-from SharedAlbumEventBroker.sharedalbum_eventbroker import publish_to_event_broker
+from sharedalbum_eventbroker.sharedalbum_eventbroker import publish_to_event_broker
 
 
 # Define shared_album dictionary

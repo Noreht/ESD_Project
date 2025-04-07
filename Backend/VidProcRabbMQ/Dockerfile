@@ -18,7 +18,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the Python file and RabbitMQ setup
-COPY VidProcRabbmq.py /app/
+COPY vidprocrabbmq.py /app/
 COPY rabbitmq /app/rabbitmq
 
 # Set environment variables
@@ -26,4 +26,4 @@ ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
 # Run the main script
-CMD ["python", "VidProcRabbmq.py"]
+CMD ["python", "vidprocrabbmq.py"]
