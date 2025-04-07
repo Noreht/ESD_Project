@@ -56,7 +56,7 @@ export default {
     const Login = () => {
       signInWithEmailAndPassword(auth, email.value, password.value)
         .then((userCredential) => {
-          console.log('Successfully logged in!');
+          console.log('Scenario 1 Step 1: Successfully logged in!');
           localStorage.setItem('authToken', userCredential.user.uid);
           store.commit('SET_USER', {
             email: userCredential.user.email

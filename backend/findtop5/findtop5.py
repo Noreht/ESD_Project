@@ -55,8 +55,8 @@ def find_top_5():
         last_top5_response = requests.post(
             f"{DATABASE_URL}/GetTop5",
             json={
-                "userid": email,
-                "category": top_5_categories_str
+                "UserId": email,
+                "CategoriesJSON": top_5_categories_str
             }
         )
         last_top5_data = last_top5_response.json().get("Text")

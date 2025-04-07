@@ -29,7 +29,7 @@ const CAT_A_SERVICE_URL =
 //     }
 //     });
 app.post("/categorisation", async (req, res) => {
-  console.log("Received request at /categorisation:", req.body);
+  console.log("Scenario 2 Step 2: Received request at /categorisation:", req.body);
   try {
     console.log("Gateway initiated");
     const response = await axios.post(
@@ -162,7 +162,7 @@ const FIND_TOP_5_URL = "http://findtop5:5300";
 app.get("/LoadDashboard", async (req, res) => {
   const email = req.query.email;
 
-  console.log("Received request at LoadDashboard", req.query);
+  console.log("Scenario 1 Step 2: Received request at LoadDashboard", req.query);
 
   if (!email) {
     return res.status(400).json({ error: "User email missing" });

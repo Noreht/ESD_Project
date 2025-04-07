@@ -234,9 +234,10 @@ const props = defineProps({
 const userEmail = props.email;
 //Dashboard code 
 
-console.log('Email passed to dashboard:', userEmail)
+//console.log('Email passed to dashboard:', userEmail)
 
 onMounted(async () => {
+  console.log("Scenario 2 Step 2: Fetching dashboard data via API");
   if (!userEmail) {
     //console.error('knncccb never log in');
     return;
@@ -246,7 +247,7 @@ onMounted(async () => {
       params: { email: userEmail }
     });
     const data = response.data;
-
+    console.log("Scenario 1 Step 5: Dashboard data received");
     userId.value = data.UserId;
     top5Categories.value = data.top_5_categories.split(",");
     lastWeekCategories.value = data.last_week_categories.split(",");
@@ -257,7 +258,7 @@ onMounted(async () => {
   }
 });
 
-console.log("top5", top5Categories);
+//console.log("top5", top5Categories);
 
 // Category code
 
@@ -321,7 +322,7 @@ async function fetchVideos(userEmail) {
 }
 
 onMounted(() => {
-  fetchVideos(userEmail)
+  fetchVideos(userEmail), retrieveSharedAlbum()
 })
 
 // Computed property that filters videos based on the current category selection.
@@ -357,7 +358,6 @@ const navigation = reactive([
   { name: 'Overview', href: '#', current: true },
   { name: 'Save Video', href: '#', current: false },
   { name: 'Categories', href: '#', current: false },
-  { name: 'Recommendations', href: '#', current: false },
   { name: 'Shared Albums', href: '#', current: false },
 ])
 
@@ -406,8 +406,8 @@ onMounted(async () => {
 
 function saveVideo(videoId) {
   const userEmail = props.email || user.email;  // fallback if props.email not passed
-  console.log("saveVideo pressed for:", videoId)
-  console.log("Sending:", { video: videoId, email: userEmail, category: '' });
+  console.log("Scenario 2 Step 1: saveVideo pressed for:", videoId)
+  //console.log("Sending:", { video: videoId, email: userEmail, category: '' });
 
   axios.post(`${import.meta.env.VITE_API_URL}/categorisation`, {
     video: videoId,
@@ -415,7 +415,7 @@ function saveVideo(videoId) {
     category: ''  // You can set actual category if available
   })
     .then(response => {
-      console.log("Response from backend:", response.data)
+      console.log("Scenario 2 Step 4: Response from backend:", response.data)
     })
     .catch(error => {
       console.error("Error while posting video:", error)
@@ -428,7 +428,7 @@ const sharedAlbumVideos = ref([])
 const shared_album_categories = ref([])
 
 async function retrieveSharedAlbum() {
-  console.log("retrieveSharedAlbum pressed");
+  //console.log("retrieveSharedAlbum pressed");
 
   try {
     // Replace with your API gateway URL for RetrieveSharedAlbum.
@@ -442,7 +442,7 @@ async function retrieveSharedAlbum() {
     const data = response.data;
     sharedAlbumVideos.value = data;
 
-    console.log("API Response:", data); // Log the API response for debugging
+    //console.log("API Response:", data); // Log the API response for debugging
 
     // Group videos by their category.
     const groupedCategories = data.reduce((groups, video) => {
@@ -470,7 +470,7 @@ async function retrieveSharedAlbum() {
       ...categoryList
     ];
 
-    console.log("Shared Album Categories", shared_album_categories.value);
+    //console.log("Shared Album Categories", shared_album_categories.value);
     // Set default category to 'All'
     currentCategory.value = 'All';
   } catch (error) {
@@ -481,8 +481,8 @@ async function retrieveSharedAlbum() {
 
 function saveSharedAlbum(videoId) {
 
-  console.log("saveSharedAlbum pressed for:", videoId)
-  console.log("API URL:", import.meta.env.VITE_API_URL);
+  console.log("Scenario 3 Step 1: saveSharedAlbum pressed for:", videoId)
+  //console.log("API URL:", import.meta.env.VITE_API_URL);
   axios.post(`${import.meta.env.VITE_API_URL}/saveSharedAlbum` //'http://localhost:5100/shared-album/add'
     , {
       'video_id': videoId,
@@ -491,11 +491,11 @@ function saveSharedAlbum(videoId) {
     }
   )
     .then(response => {
-      console.log("Response from backend:", response.data)
+      //console.log("Response from backend:", response.data)
 
       retrieveSharedAlbum()
 
-      console.log("Shared Album Vids", sharedAlbumVideos)
+      //console.log("Shared Album Vids", sharedAlbumVideos)
 
     })
     .catch(error => {
