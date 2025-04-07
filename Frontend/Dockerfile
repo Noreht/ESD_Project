@@ -7,9 +7,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Build the app
+# Copy the rest of the app and build
 COPY . .
-RUN npm run build
+RUN chmod +x ./node_modules/.bin/vite && npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
@@ -18,10 +18,7 @@ FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY ./src/assets/videos /usr/share/nginx/html/videos
 
-# (Optional) Replace the default nginx config if needed
-# COPY nginx.conf /etc/nginx/nginx.conf
-
-# Expose the port for Nginxs
+# Expose the port for Nginx
 EXPOSE 80
 
 # Start Nginx server
