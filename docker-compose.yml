@@ -23,7 +23,9 @@ services:
       start_period: 10s
 
   gateway:
-    build: ./backend/gateway
+    build: 
+      context: ./Backend/gateway
+      dockerfile: Dockerfile
     container_name: gateway
     command: node gateway.js
     ports:
@@ -109,7 +111,9 @@ services:
       - esd-net
 
   notification:
-    build: ./backend/notification
+    build: 
+      context: ./Backend/Notification
+      dockerfile: Dockerfile
     container_name: notification
     command: python notification.py
     depends_on:
@@ -127,7 +131,9 @@ services:
       - esd-net
 
   sharedalbum:
-    build: ./backend/sharedalbum
+    build: 
+      context: ./Backend/SharedAlbum
+      dockerfile: Dockerfile
     container_name: sharedalbum
     command: python sharedalbum.py
     ports:
@@ -173,7 +179,9 @@ services:
 
 
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: vue_frontend
     ports:
       - "8080:80"

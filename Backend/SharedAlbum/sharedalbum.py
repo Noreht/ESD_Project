@@ -6,7 +6,6 @@ import os, pika, json, threading
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from SharedAlbumEventBroker.sharedalbum_eventbroker import publish_to_event_broker
 
