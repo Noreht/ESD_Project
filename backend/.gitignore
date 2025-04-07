@@ -3,10 +3,10 @@
 node_modules/
 dist/
 *.log
-__pycache__
 *.pyc
 
 # Byte-compiled / cache files
 __pycache__/
 *.py[cod]
 *.so
+.DS_Store
