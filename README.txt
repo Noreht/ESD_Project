@@ -1,45 +1,38 @@
-# Instagram Content Organiser
-ESD Project
+README – Instagram Content Organiser (IS213 ESD Project)
 
-The goal of this project is to develop an Instagram Content Organizer that will assist users in saving and grouping their Instagram posts into collections, facilitating the process of revisiting previously posted content.
+This is the source code repository for our IS213 Enterprise Solution Development project titled "Instagram Content Organiser".
 
-To install:
-Clone the repository
-git clone https://github.com/Noreht/ESD_Project.git
-cd ESD_Project
+The project is designed to help users save and organise video content from Instagram. Key features include:
+- User login via Firebase
+- Video saving and categorisation
+- Display of top 5 categories recently saved
+- Shared album functionality with other users
+- Notification system (via email, SMS, or frontend alert)
 
-Install necessary Python modules (i.e. flask, requests) to run the server on your local machine.
-pip install flask requests
+This project is implemented using Python microservices, RabbitMQ for asynchronous messaging, Firebase for authentication, and optionally OutSystems for interfacing with legacy systems. We also applied the Strangler Fig Pattern to migrate functionality progressively from OutSystems to our microservices.
 
-Include Instagram API credentials in an environment file (.env) to run the application on a local machine.
+Repository: https://github.com/Noreht/ESD_Project
 
+Setup Instructions:
+1. Clone this repository:
+   git clone https://github.com/Noreht/ESD_Project.git
 
-To-do:
-Implement Instagram authentication
-Check for user login before allowing access to any functions.
-Use OCR libraries to tag videos.
-Set up notification services using Twilio API.
+2. Install required Python packages:
+   pip install flask requests
 
-To use:
-Use your Instagram credentials to log in.
-Upload, categorize, and manage your Instagram posts.
-View analytics and insights on your Instagram content.
+3. Create a `.env` file in the root directory with the following variables:
+   INSTAGRAM_USERNAME=dummy_user
+   INSTAGRAM_PASSWORD=dummy_2025
 
+Testing:
+- Unit testing was supported using ChatGPT.
+- Code was implemented in Python and tested for functional correctness.
 
-URL for the group project:
-https://github.com/Noreht/ESD_Project
+Note:
+The OCR library for auto-tagging is not yet implemented.
+Login enforcement before using the system is also pending.
+Dummy Instagram credentials have been set up for testing purposes.
 
-Details of Dummy Instagram Account:
-INSTAGRAM_USERNAME = dummy_user
-INSTAGRAM_PASSWORD = dummy_2025
+For questions or contributions, please contact the project team via GitHub Issues.
 
-
-Contribution:
-Fork the repository.
-Create a new branch (git checkout -b feature-branch).
-Make your changes and commit them
-Push to the branch
-Create a pull request.
-
-If you have any questions or suggestions, do not hesitate to open an issue or contact the contributors of this project.
-
+Last updated: March 2025
