@@ -20,3 +20,9 @@ To run the app, please type the following commaands.
 
 5. Once all up and running, navigate to `localhost:8080` to access our frontend web page
 6. Login with the credentials as listed in our deliverables and you can navigate freely through our website to auto-categorise different videos
+   Sample credentials are:
+   1. ChrisPoskitt@is214.com / ILoveEsd123!
+   2. LayFoo@is214.com / ILoveEsd123!
+   3. Danish@is214.com / ILoveEsd123!
+  
+7. If any errors occur, try using unit_tests.py to isolate the error!
